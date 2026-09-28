@@ -65,7 +65,7 @@ strict = true
 files = ["src/lookml_agentops"]
 
 [[tool.mypy.overrides]]
-module = ["lkml", "lkml.*", "faker", "faker.*", "google.*", "mcp", "mcp.*", "httpx"]
+module = ["lkml", "lkml.*", "faker", "faker.*", "google.*", "mcp", "mcp.*", "httpx", "httpx2"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

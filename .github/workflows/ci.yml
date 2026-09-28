@@ -12,12 +12,15 @@ jobs:
       fail-fast: false
       matrix:
         python: ["3.11", "3.12", "3.13"]
+    env:
+      UV_PYTHON: ${{ matrix.python }}   # keep every step on the matrix Python (not .python-version)
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --all-extras --python ${{ matrix.python }}
-      - run: uv run ruff check . && uv run ruff format --check .
-      - run: uv run mypy
-      - run: uv run pytest --cov=lookml_agentops --cov-report=term
+      - run: uv sync --all-extras
+      - run: uv run --no-sync python --version
+      - run: uv run --no-sync ruff check . && uv run --no-sync ruff format --check .
+      - run: uv run --no-sync mypy
+      - run: uv run --no-sync pytest --cov=lookml_agentops --cov-report=term
       - name: Offline demo (four attributions)
-        run: uv run lkagent demo --workdir "$RUNNER_TEMP/lkagent-demo"
+        run: uv run --no-sync lkagent demo --workdir "$RUNNER_TEMP/lkagent-demo"
