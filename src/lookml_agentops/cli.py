@@ -201,5 +201,60 @@ def generate_resolve_golden(config: ConfigOpt = None) -> None:
     typer.echo(f"resolved {len(report['resolved'])} URL(s); {len(report['cached'])} already cached")
 
 
+@diagnose_app.command("run")
+def diagnose_run(
+    config: ConfigOpt = None,
+    agent: Annotated[list[str] | None, typer.Option(help="Limit to these agent ids")] = None,
+    runner: Annotated[str, typer.Option(help="mock | ca | mcp")] = "",
+    scenario: Annotated[str, typer.Option(help="Mock external scenario")] = "",
+    label: Annotated[str | None, typer.Option(help="Free-text label stored with the run")] = None,
+    suites_only: Annotated[
+        bool, typer.Option("--suites-only", help="Skip generated tests")
+    ] = False,
+    rebaseline: Annotated[
+        bool, typer.Option("--rebaseline", help="Accept today's ground truth as the new baseline")
+    ] = False,
+    explain_deps: Annotated[
+        str | None, typer.Option("--explain-deps", help="Print the dependency set of this test id")
+    ] = None,
+    no_record: Annotated[
+        bool, typer.Option("--no-record", help="Do not write run history")
+    ] = False,
+    fail_on: Annotated[str, typer.Option(help="fail | degraded | never")] = "fail",
+) -> None:
+    """Answer every test through a runner and record a fingerprinted run."""
+    from lookml_agentops.diagnose.run import RunOptions, run_diagnose
+    from lookml_agentops.diagnose.run import explain_deps as explain
+    from lookml_agentops.diagnose.runners.ca import RunnerConfigError
+    from lookml_agentops.diagnose.summary import render_summary
+    from lookml_agentops.generate.compile import CompileError
+
+    cfg = _cfg(config)
+    opts = RunOptions(
+        runner=runner or cfg.diagnose.runner,
+        scenario=scenario or cfg.diagnose.scenario,
+        agents=list(agent) if agent else None,
+        label=label,
+        record=not no_record,
+        rebaseline=rebaseline,
+        include_generated=not suites_only,
+    )
+    try:
+        rec = run_diagnose(cfg, opts, log=lambda m: typer.echo(m, err=True))
+    except (CompileError, RunnerConfigError, ValueError) as exc:
+        typer.echo(f"diagnose run: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    typer.echo(render_summary(rec), nl=False)
+    if explain_deps:
+        try:
+            typer.echo(explain(rec, explain_deps, cfg), nl=False)
+        except KeyError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(2) from exc
+    bad = {"fail", "error"} | ({"degraded"} if fail_on == "degraded" else set())
+    if fail_on != "never" and any(r.status in bad for r in rec.results):
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

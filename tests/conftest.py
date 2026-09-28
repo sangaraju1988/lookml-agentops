@@ -40,3 +40,14 @@ def example_copy(tmp_path: Path) -> Path:
         EXAMPLE, dst, ignore=shutil.ignore_patterns("data", "*.duckdb", ".lkagent", "build")
     )
     return dst
+
+
+@pytest.fixture
+def harbor(example_copy: Path, small_seed: Path) -> Path:
+    """Writable example copy with the small seed installed (ready for `diagnose run`)."""
+    import shutil
+
+    dst = example_copy / "seed" / "harborline.duckdb"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(small_seed, dst)
+    return example_copy

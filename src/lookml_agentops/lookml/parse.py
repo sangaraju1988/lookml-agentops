@@ -114,12 +114,14 @@ def _parse_view(block: tree.BlockNode, project: str, path: str) -> LView:
             fname = _token_value(child.name)
             fp = _block_dict(child)
             fp.pop("name", None)
+            floc = Loc(project, path, _line(child))
             fields[fname] = LField(
                 view=name.lstrip("+"),
                 name=fname,
                 kind=key,
                 params=fp,
-                provenance=[Prov("define", Loc(project, path, _line(child)))],
+                provenance=[Prov("define", floc)],
+                param_locs={k: floc for k in fp},
             )
         else:
             params[key] = _node_value(child)
@@ -138,7 +140,10 @@ def _parse_explore(block: tree.BlockNode, project: str, path: str) -> LExplore:
             joins[jname] = LJoin(jname, jp, [Prov("define", Loc(project, path, _line(child)))])
         else:
             params[key] = _node_value(child)
-    return LExplore(name, params, joins, [Prov("define", Loc(project, path, _line(block)))])
+    eloc = Loc(project, path, _line(block))
+    return LExplore(
+        name, params, joins, [Prov("define", eloc)], param_locs={k: eloc for k in params}
+    )
 
 
 def _scan_exemptions(text: str, pf: ParsedFile, object_lines: list[int]) -> None:

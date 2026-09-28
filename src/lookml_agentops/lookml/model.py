@@ -62,6 +62,8 @@ class LField:
     params: dict[str, Any]
     provenance: list[Prov]
     exemptions: set[str] = field(default_factory=set)
+    # where each parameter was last set (define / refine / override), for field-level attribution
+    param_locs: dict[str, Loc] = field(default_factory=dict)
 
     @property
     def id(self) -> str:
@@ -145,6 +147,7 @@ class LField:
             copy.deepcopy(self.params),
             list(self.provenance),
             set(self.exemptions),
+            dict(self.param_locs),
         )
 
 
@@ -224,6 +227,7 @@ class LExplore:
     joins: dict[str, LJoin]
     provenance: list[Prov]
     exemptions: set[str] = field(default_factory=set)
+    param_locs: dict[str, Loc] = field(default_factory=dict)
 
     @property
     def base_view(self) -> str:
@@ -290,6 +294,7 @@ class LExplore:
             {k: j.clone() for k, j in self.joins.items()},
             list(self.provenance),
             set(self.exemptions),
+            dict(self.param_locs),
         )
 
 

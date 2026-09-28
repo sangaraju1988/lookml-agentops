@@ -362,6 +362,7 @@ def _refine_view(base: LView, ref: LView) -> None:
         if fname in base.fields:
             bf = base.fields[fname]
             _merge_field_params(bf.params, rf.params)
+            bf.param_locs.update({k: rf.provenance[0].loc for k in rf.params})
             bf.provenance.append(Prov("refine", rf.provenance[0].loc))
             bf.exemptions |= rf.exemptions
         else:
@@ -379,6 +380,9 @@ def _overlay_view(dst: LView, src: LView, op: str) -> LView:
         if fname in out.fields:
             of = out.fields[fname]
             _merge_field_params(of.params, sf.params)
+            of.param_locs.update(
+                {k: sf.param_locs.get(k, sf.provenance[-1].loc) for k in sf.params}
+            )
             of.provenance.append(
                 Prov("override" if op == "override" else "extend", sf.provenance[-1].loc)
             )
@@ -403,6 +407,7 @@ def _merge_joins(dst: dict[str, LJoin], src: dict[str, LJoin], op: str) -> None:
 
 def _refine_explore(base: LExplore, ref: LExplore) -> None:
     base.provenance.append(Prov("refine", ref.provenance[0].loc))
+    base.param_locs.update({k: ref.provenance[0].loc for k in ref.params})
     for k, v in ref.params.items():
         if k == "extends":
             base.params["extends"] = [*base.extends, *(v if isinstance(v, list) else [v])]
@@ -416,6 +421,7 @@ def _overlay_explore(dst: LExplore, src: LExplore) -> LExplore:
     out = dst.clone()
     for k, v in src.params.items():
         out.params[k] = v
+        out.param_locs[k] = src.param_locs.get(k, src.provenance[-1].loc)
     _merge_joins(out.joins, src.joins, "override")
     return out
 
