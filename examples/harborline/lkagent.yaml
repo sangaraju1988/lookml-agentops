@@ -1,0 +1,46 @@
+# lookml-agentops project config for the Harborline Supply Co. demo.
+# Paths are relative to this file. In real deployments each Looker project is usually its own
+# git repo: point `projects.<name>.path` at separate checkouts.
+version: 1
+name: harborline
+as_of: 2026-01-20          # pins relative dates ("last quarter") for deterministic answers
+
+seed:
+  seed: 20260120
+  scale: 1.0
+  out_dir: seed/data
+  duckdb: seed/harborline.duckdb
+  manifest: seed/manifest.json
+
+projects:
+  core_hub:
+    path: lookml/core_hub
+    role: hub
+    owner: central data team
+  finance_spoke:
+    path: lookml/finance_spoke
+    role: spoke
+    owner: finance analytics
+  logistics_spoke:
+    path: lookml/logistics_spoke
+    role: spoke
+    owner: logistics analytics
+
+catalog:
+  adapter: yaml
+  path: catalog/glossary.yaml
+
+lint:
+  max_ai_fields: 150
+
+compile:
+  out_dir: build
+
+golden:
+  - golden/finance.yaml
+  - golden/logistics.yaml
+
+verify:
+  runner: mock
+  vendor_profile: v1
+  history: .lkagent/history.duckdb

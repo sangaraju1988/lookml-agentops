@@ -1,0 +1,103 @@
+"""Column order and types for every seed table (shared by CSV writer and loaders)."""
+
+from __future__ import annotations
+
+# (column, duckdb type). Order here is the CSV column order.
+TABLES: dict[str, list[tuple[str, str]]] = {
+    "regions": [("region_id", "INTEGER"), ("region_name", "VARCHAR")],
+    "product_categories": [("category_id", "INTEGER"), ("category_name", "VARCHAR")],
+    "products": [
+        ("product_id", "INTEGER"),
+        ("sku", "VARCHAR"),
+        ("product_name", "VARCHAR"),
+        ("category_id", "INTEGER"),
+        ("unit_cost", "DECIMAL(12,2)"),
+        ("list_price", "DECIMAL(12,2)"),
+    ],
+    "warehouses": [
+        ("warehouse_id", "INTEGER"),
+        ("warehouse_name", "VARCHAR"),
+        ("city", "VARCHAR"),
+        ("timezone", "VARCHAR"),
+        ("region_id", "INTEGER"),
+    ],
+    "carriers": [("carrier_id", "INTEGER"), ("carrier_name", "VARCHAR")],
+    "customers": [
+        ("customer_id", "INTEGER"),
+        ("company_name", "VARCHAR"),
+        ("contact_name", "VARCHAR"),
+        ("email", "VARCHAR"),
+        ("phone", "VARCHAR"),
+        ("date_of_birth", "DATE"),
+        ("billing_address", "VARCHAR"),
+        ("region_id", "INTEGER"),
+        ("segment", "VARCHAR"),
+        ("created_at", "TIMESTAMP"),
+        ("is_test_account", "BOOLEAN"),
+    ],
+    "orders": [
+        ("order_id", "INTEGER"),
+        ("customer_id", "INTEGER"),
+        ("warehouse_id", "INTEGER"),
+        ("order_ts_utc", "TIMESTAMP"),
+        ("channel", "VARCHAR"),
+        ("gross_amount", "DECIMAL(12,2)"),
+        ("discount_amount", "DECIMAL(12,2)"),
+        ("is_deleted", "BOOLEAN"),
+    ],
+    "order_items": [
+        ("order_item_id", "INTEGER"),
+        ("order_id", "INTEGER"),
+        ("product_id", "INTEGER"),
+        ("quantity", "INTEGER"),
+        ("unit_price", "DECIMAL(12,2)"),
+        ("line_amount", "DECIMAL(12,2)"),
+    ],
+    "shipments": [
+        ("shipment_id", "INTEGER"),
+        ("order_id", "INTEGER"),
+        ("warehouse_id", "INTEGER"),
+        ("carrier_id", "INTEGER"),
+        ("status", "VARCHAR"),
+        ("shipped_at_local", "TIMESTAMP"),
+        ("promised_date", "DATE"),
+        ("delivered_at_local", "TIMESTAMP"),
+    ],
+    "shipment_events": [
+        ("event_id", "INTEGER"),
+        ("shipment_id", "INTEGER"),
+        ("event_type", "VARCHAR"),
+        ("event_at_local", "TIMESTAMP"),
+    ],
+    "invoices": [
+        ("invoice_id", "INTEGER"),
+        ("order_id", "INTEGER"),
+        ("invoice_date", "DATE"),
+        ("amount", "DECIMAL(12,2)"),
+        ("status", "VARCHAR"),
+    ],
+    "payments": [
+        ("payment_id", "INTEGER"),
+        ("invoice_id", "INTEGER"),
+        ("payment_date", "DATE"),
+        ("amount", "DECIMAL(12,2)"),
+    ],
+    "refunds": [
+        ("refund_id", "INTEGER"),
+        ("order_id", "INTEGER"),
+        ("refunded_at_utc", "TIMESTAMP"),
+        ("refund_amount", "DECIMAL(12,2)"),
+        ("reason", "VARCHAR"),
+    ],
+    "fiscal_calendar": [
+        ("calendar_date", "DATE"),
+        ("fiscal_year", "INTEGER"),
+        ("fiscal_quarter", "INTEGER"),
+        ("fiscal_quarter_label", "VARCHAR"),
+        ("fiscal_month", "INTEGER"),
+        ("fiscal_year_start", "DATE"),
+        ("fiscal_quarter_start", "DATE"),
+    ],
+}
+
+RAW_SCHEMA = "raw"

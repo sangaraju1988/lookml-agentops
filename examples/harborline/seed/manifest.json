@@ -1,0 +1,64 @@
+{
+  "as_of": "2026-01-20",
+  "content_hash": "b4db091da9bdd9c1c22fbf0e1cfc0425e63c10ba35aafd32cbd73065aafba354",
+  "scale": 1.0,
+  "seed": 20260120,
+  "tables": {
+    "carriers": {
+      "rows": 5,
+      "sha256": "f8e21a31ac5466c1072265786ec5ba61b2fac27104b7143539da078ade5c792e"
+    },
+    "customers": {
+      "rows": 5000,
+      "sha256": "672b2f62da894034dae84455475500511e14571636379744c8773bc5fe7606e2"
+    },
+    "fiscal_calendar": {
+      "rows": 1461,
+      "sha256": "4c4f504bfb60522e16c9aae893151254378ebcf7ff219be8dd5f43a168913a56"
+    },
+    "invoices": {
+      "rows": 59684,
+      "sha256": "f1fbbaa8bb862312af1c83b0a4c0baaf298a986cae645d21257c950ded4fbadb"
+    },
+    "order_items": {
+      "rows": 150326,
+      "sha256": "96604de606731eea05aabe8b8394812e5dce01143fc3d3f224828d5d7c6ccdf7"
+    },
+    "orders": {
+      "rows": 60000,
+      "sha256": "baa3c53cfee1e590825b8406004ab7fa8b2c0eed86a95c563f4ff9bdb9a01b0d"
+    },
+    "payments": {
+      "rows": 53192,
+      "sha256": "0a4decd1d0c52b427162909fa304d1f1d09f64303c4702a4b5c30383c7c5d5b0"
+    },
+    "product_categories": {
+      "rows": 12,
+      "sha256": "c153af2f5cc5d8aa6f661935905c875e02ec490ec25d0583865b63291127f18c"
+    },
+    "products": {
+      "rows": 200,
+      "sha256": "e320c130efb8a2449e5c219dd5619d4be443b059d0c137b10633e86b4e88c36f"
+    },
+    "refunds": {
+      "rows": 2888,
+      "sha256": "d84f912757d19fdd152c332e9a5bf88fa0edea1de3f34aeec704810edd47b1a0"
+    },
+    "regions": {
+      "rows": 7,
+      "sha256": "f16bde7210e7ba22692e2383d2b8b4b07f236027ec9519ffefd74b36991cf7e0"
+    },
+    "shipment_events": {
+      "rows": 154590,
+      "sha256": "40ff1f01f1109de6777e1bdf2a416710143c49e50f1c097450998a62c158a23c"
+    },
+    "shipments": {
+      "rows": 59684,
+      "sha256": "4af826f317795934f4d8042a2facea7f009f779e809002bf22e1baeb566ae553"
+    },
+    "warehouses": {
+      "rows": 5,
+      "sha256": "fbbd71a46e1f655ac29502669b539a2f0146a97eb5f8722b3525c83998ee8eef"
+    }
+  }
+}
