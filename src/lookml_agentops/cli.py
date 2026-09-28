@@ -151,5 +151,55 @@ def generate_lint(
         raise typer.Exit(1)
 
 
+@generate_app.command("compile")
+def generate_compile(
+    config: ConfigOpt = None,
+    agent: Annotated[str | None, typer.Option(help="Compile only this agent id")] = None,
+    check: Annotated[
+        bool, typer.Option("--check", help="Fail if the committed build/ is stale")
+    ] = False,
+) -> None:
+    """Compile *.agent.md specs to agent_spec.v1 JSON, CA API context, Looker UI text and tests."""
+    from lookml_agentops.generate.compile import CompileError, check_build, write_build
+
+    cfg = _cfg(config)
+    try:
+        if check:
+            stale = check_build(cfg)
+            if stale:
+                typer.echo("stale build artifacts (run `lkagent generate compile`):", err=True)
+                for s in stale:
+                    typer.echo(f"  {s}", err=True)
+                raise typer.Exit(1)
+            typer.echo("build artifacts are up to date")
+            return
+        result = write_build(cfg, agent=agent)
+    except CompileError as exc:
+        typer.echo(f"compile failed:\n{exc}", err=True)
+        raise typer.Exit(1) from exc
+    for w in result.warnings:
+        typer.echo(f"warning: {w}", err=True)
+    for aid, ca in sorted(result.agents.items()):
+        typer.echo(
+            f"{aid}: {len(ca.spec.active_rules())} rules, {len(ca.tests)} tests, "
+            f"content_hash={ca.spec.content_hash[:12]}"
+        )
+    typer.echo(f"wrote {len(result.files)} files to {result.out_dir}")
+
+
+@generate_app.command("resolve-golden")
+def generate_resolve_golden(config: ConfigOpt = None) -> None:
+    """Resolve golden-query Explore URLs to Looker queries (cached in build/golden_cache.json)."""
+    from lookml_agentops.generate.golden_resolve import GoldenResolveError, resolve_golden
+
+    cfg = _cfg(config)
+    try:
+        report = resolve_golden(cfg)
+    except GoldenResolveError as exc:
+        typer.echo(f"resolve-golden: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    typer.echo(f"resolved {len(report['resolved'])} URL(s); {len(report['cached'])} already cached")
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

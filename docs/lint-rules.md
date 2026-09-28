@@ -35,3 +35,15 @@ Exempt a single object with `# lkagent:disable LKA001 reason="..."` on the line 
 | LKA016 | `explore-missing-description` | warning | Agents choose explores by description. | Add an explore `description:`. |
 | LKA017 | `unknown-glossary-tag` | error | A glossary tag pointing nowhere means the field's business meaning is undefined. | Create the term or fix the tag. |
 | LKA018 | `undefined-access-grant` | error | Fields protected by an undefined grant are not protected the way the author intended. | Define the access_grant in every model that includes the view. |
+| LKS001 | `spec-invalid` | error | The spec must parse: valid frontmatter and only known sections, so nothing is silently ignored. | Fix the frontmatter keys or rename the section (Role, Audience, Rules, Vocabulary, Guardrails, Golden queries). |
+| LKS002 | `unknown-explore` | error | An agent can only use explores that exist and are queryable in the resolved model. | Use <project>::<explore> for an explore that is not `extension: required`. |
+| LKS003 | `too-many-explores` | error | A Conversational Analytics data agent can connect to at most five Looker explores. | Split the agent or drop explores. |
+| LKS004 | `unknown-field` | error | Vocabulary, rules and golden queries must reference fields that exist in the agent's explores. | Fix the field reference (explore.field or view.field). |
+| LKS005 | `golden-query-pivot` | error | Conversational Analytics does not generate pivoted queries, so pivoted golden queries mislead it. | Remove pivots from the golden query. |
+| LKS006 | `golden-query-foreign-explore` | error | Golden queries must use the agent's own explores (and their model). | Point the golden query at one of the agent's explores or add the explore. |
+| LKS007 | `duplicate-spec-id` | error | Rule and golden-query ids drive tests and attribution, so they must be unique across the extends chain. | Rename one of the ids. |
+| LKS008 | `locked-rule-violation` | error | A rule marked `locked: true` cannot be overridden or contradicted by a descendant spec. | Remove the conflicting rule/vocabulary, or change the locked rule in the spec that owns it. |
+| LKS009 | `placement-advice` | warning | Field synonyms and definitions belong in LookML (and the catalog), where every agent sees them. | Move the synonym into LookML/catalog, or drop the duplicate from the spec. |
+| LKS010 | `pii-guardrail-missing` | error | If an agent's explores expose PII, the spec must say what the agent may never return. | Add a guardrail naming the PII (e.g. 'Never return customer email or phone.'). |
+| LKS011 | `spec-extends-error` | error | Extends targets must exist and must not form a cycle. | Fix the extends path or break the cycle. |
+| LKS012 | `golden-url-unresolved` | warning | Explore URLs must be resolved to Looker queries before they can be exported. | Run `lkagent generate resolve-golden`, or write the golden query inline as looker_query. |

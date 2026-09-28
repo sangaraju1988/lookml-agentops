@@ -1,0 +1,62 @@
+tests:
+- agent: procurement-buyer
+  expect:
+    explore: purchase_orders
+    fields_any_of:
+    - - suppliers.supplier_name
+      - purchase_orders.total_spend
+  id: adh.procurement-buyer.golden.gq-spend-by-supplier
+  kind: adherence
+  question: What was total spend by supplier in FY2026?
+  rule_ids:
+  - golden:gq-spend-by-supplier
+  tags:
+  - spec:golden-query
+- agent: procurement-buyer
+  expect:
+    explore: purchase_orders
+    filters:
+    - field: purchase_orders.ordered_date
+      period: last_completed_fiscal_quarter
+  id: adh.procurement-buyer.rule.po-fiscal-quarter
+  kind: adherence
+  question: What was the po count last quarter?
+  rule_ids:
+  - rule:po-fiscal-quarter
+  tags:
+  - spec:rule
+- agent: procurement-buyer
+  expect:
+    explore: purchase_orders
+    filters:
+    - field: purchase_orders.ordered_date
+      period: last_completed_fiscal_year
+  id: adh.procurement-buyer.rule.po-fiscal-year
+  kind: adherence
+  question: What was the po count last year?
+  rule_ids:
+  - rule:po-fiscal-year
+  tags:
+  - spec:rule
+- agent: procurement-buyer
+  expect:
+    fields_any_of:
+    - - purchase_orders.total_spend
+  id: adh.procurement-buyer.rule.spend-excludes-cancelled
+  kind: adherence
+  question: What is the total spend?
+  rule_ids:
+  - rule:spend-excludes-cancelled
+  tags:
+  - spec:rule
+- agent: procurement-buyer
+  expect:
+    fields_any_of:
+    - - purchase_orders.po_count
+  id: adh.procurement-buyer.vocab.procurement-buyer-pos.1
+  kind: adherence
+  question: What is the total pos?
+  rule_ids:
+  - vocab:procurement-buyer-pos
+  tags:
+  - spec:vocabulary

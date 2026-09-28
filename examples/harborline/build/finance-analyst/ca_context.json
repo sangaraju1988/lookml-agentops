@@ -1,0 +1,63 @@
+{
+  "datasource_references": {
+    "looker": {
+      "explore_references": [
+        {
+          "explore": "finance_orders",
+          "looker_instance_uri": "${LOOKER_INSTANCE_URI}",
+          "lookml_model": "finance"
+        },
+        {
+          "explore": "finance_invoices",
+          "looker_instance_uri": "${LOOKER_INSTANCE_URI}",
+          "lookml_model": "finance"
+        }
+      ]
+    }
+  },
+  "looker_golden_queries": [
+    {
+      "looker_query": {
+        "explore": "finance_orders",
+        "fields": [
+          "regions.region_name",
+          "orders.net_revenue"
+        ],
+        "filters": [
+          {
+            "field": "created_fiscal.fiscal_quarter_label",
+            "value": "FY2026-Q3"
+          }
+        ],
+        "model": "finance",
+        "sorts": [
+          "orders.net_revenue desc"
+        ]
+      },
+      "natural_language_questions": [
+        "What was net revenue by region in FY2026-Q3?",
+        "Net revenue split by region for FY2026 Q3"
+      ]
+    },
+    {
+      "looker_query": {
+        "explore": "finance_invoices",
+        "fields": [
+          "invoice_fiscal.fiscal_quarter_label",
+          "invoices.recognized_revenue"
+        ],
+        "filters": [
+          {
+            "field": "invoices.is_void",
+            "value": "no"
+          }
+        ],
+        "model": "finance"
+      },
+      "natural_language_questions": [
+        "Show recognized revenue by fiscal quarter"
+      ]
+    }
+  ],
+  "system_instruction": "system_instruction: 'You are a finance analyst supporting FP&A at Harborline Supply Co. Be concise and\n  always state\n\n  the fiscal period used. Finance managers comfortable with accounting terms, not SQL.'\nglossaries:\n- glossary:\n  - term: collection days\n  - description: Use payments.days_sales_outstanding.\n  - synonyms:\n    - time to collect\n- glossary:\n  - term: returns ratio\n  - description: Use orders.refund_rate.\n  - synonyms: []\n- glossary:\n  - term: Active Customer\n  - description: A non-test customer with at least one non-deleted order in the period. (derived from\n      catalog:active_customer; field orders.active_customer_count)\n  - synonyms:\n    - active customers\n    - buying customers\n- glossary:\n  - term: Customer\n  - description: A business that buys from Harborline, identified by its legal company name. (derived\n      from catalog:customer; field customers.company_name)\n  - synonyms:\n    - customer name\n    - account\n- glossary:\n  - term: Customer Segment\n  - description: Enterprise, Mid-Market or SMB, based on annual spend band. (derived from catalog:customer_segment;\n      field customers.segment)\n  - synonyms:\n    - segment\n- glossary:\n  - term: Days Sales Outstanding\n  - description: Average days from invoice date to payment date for paid invoices. (derived from catalog:days_sales_outstanding;\n      field payments.days_sales_outstanding)\n  - synonyms:\n    - dso\n    - days to pay\n- glossary:\n  - term: Fiscal Quarter\n  - description: A three-month period of the Harborline fiscal year, which starts February 1. \"Last quarter\"\n      means the last completed fiscal quarter. (derived from catalog:fiscal_quarter; field created_fiscal.fiscal_quarter_label)\n  - synonyms:\n    - quarter\n    - fiscal qtr\n- glossary:\n  - term: Fiscal Year\n  - description: February 1 to January 31, named by the calendar year in which it ends (FY2026 = Feb 2025\n      to Jan 2026). (derived from catalog:fiscal_year; field created_fiscal.fiscal_year)\n  - synonyms:\n    - fy\n- glossary:\n  - term: Gross Revenue\n  - description: Sum of order line amounts before discounts and refunds. (derived from catalog:gross_revenue;\n      field orders.gross_revenue)\n  - synonyms:\n    - gross sales\n    - bookings\n- glossary:\n  - term: Net Revenue\n  - description: Gross order revenue minus discounts minus refunds, attributed to the order date. This\n      is the company's default meaning of \"revenue\" and \"sales\". (derived from catalog:net_revenue; field\n      orders.net_revenue)\n  - synonyms:\n    - revenue\n    - sales\n    - net sales\n    - turnover\n- glossary:\n  - term: Order Count\n  - description: Number of orders, excluding test accounts and soft-deleted orders. (derived from catalog:order_count;\n      field orders.order_count)\n  - synonyms:\n    - orders\n    - number of orders\n    - order volume\n- glossary:\n  - term: Recognized Revenue\n  - description: Invoiced amount recognized on the invoice date, excluding void invoices. (derived from\n      catalog:recognized_revenue; field invoices.recognized_revenue)\n  - synonyms:\n    - invoiced revenue\n    - billed revenue\n- glossary:\n  - term: Refund Rate\n  - description: Refunds attributed to the order period divided by gross revenue. (derived from catalog:refund_rate;\n      field orders.refund_rate)\n  - synonyms:\n    - refund percentage\n- glossary:\n  - term: Region\n  - description: Sales region of the customer. \"Pacific NW\" is a legacy spelling of \"Pacific Northwest\".\n      (derived from catalog:region; field regions.region_name)\n  - synonyms:\n    - sales region\n    - territory\nadditional_descriptions:\n- text: '[revenue-default] \"Revenue\" means net revenue unless the user explicitly says gross.'\n- text: '[fiscal-quarter] \"Last quarter\" means the last completed fiscal quarter; the fiscal year starts\n    February 1.'\n- text: '[fiscal-year] \"Last year\" means the last completed fiscal year (FY2026 = Feb 2025 to Jan 2026).'\n- text: '[last-month] \"Last month\" means the last completed calendar month.'\n- text: '[exclude-test-accounts] Never include test accounts or soft-deleted orders, even when asked for\n    all data.'\n- text: '[state-the-period] Always state the time period an answer covers.'\n- text: '[sales-means-net] \"Sales\" and \"net sales\" mean net revenue.'\n- text: '[quarter-is-fiscal] \"Quarter\" means fiscal quarter.'\n- text: '[recognized-by-invoice-date] \"Recognized revenue\" means recognized revenue; report it by invoice\n    date.'\n- text: '[no-customer-pii] Guardrail: Never return customer email, phone, date of birth, billing address\n    or contact name.'\n- text: '[derived] created_fiscal.fiscal_quarter_label: Fiscal quarter such as FY2026-Q3.'\n- text: '[derived] created_fiscal.fiscal_year: Fiscal year, named by the calendar year in which it ends.'\n- text: '[derived] customers.company_name: Legal name of the customer company.'\n- text: '[derived] customers.company_name: Legal name of the customer company.'\n- text: '[derived] customers.segment: Enterprise, Mid-Market or SMB.'\n- text: '[derived] customers.segment: Enterprise, Mid-Market or SMB.'\n- text: '[derived] invoice_fiscal.fiscal_quarter_label: Fiscal quarter such as FY2026-Q3.'\n- text: '[derived] invoice_fiscal.fiscal_year: Fiscal year, named by the calendar year in which it ends.'\n- text: '[derived] invoices.recognized_revenue: Invoiced amount (net of discounts) recognized on the invoice\n    date, excluding void invoices.'\n- text: '[derived] orders.active_customer_count: Distinct customers with at least one order in the period.'\n- text: '[derived] orders.active_customer_count: Distinct customers with at least one order in the period.'\n- text: '[derived] orders.gross_revenue: Sum of order line amounts before discounts and refunds. Finance\n    calls this ''bookings''. Never use it when someone asks for ''revenue'' without qualification.'\n- text: '[derived] orders.gross_revenue: Sum of order line amounts before discounts and refunds. Finance\n    calls this ''bookings''. Never use it when someone asks for ''revenue'' without qualification.'\n- text: '[derived] orders.net_revenue: Gross revenue minus discounts minus refunds, attributed to the\n    order date (late refunds reduce the period of the original order).'\n- text: '[derived] orders.net_revenue: Gross revenue minus discounts minus refunds, attributed to the\n    order date (late refunds reduce the period of the original order).'\n- text: '[derived] orders.order_count: Number of orders (excluding test accounts and soft-deleted orders).'\n- text: '[derived] orders.order_count: Number of orders (excluding test accounts and soft-deleted orders).'\n- text: '[derived] orders.refund_rate: Refunds attributed to the order period divided by gross revenue.'\n- text: '[derived] orders.refund_rate: Refunds attributed to the order period divided by gross revenue.'\n- text: '[derived] payments.days_sales_outstanding: Average number of days from invoice date to payment\n    date for paid invoices.'\n- text: '[derived] regions.region_name: Sales region of the customer. The legacy value ''Pacific NW''\n    is normalized to ''Pacific Northwest''.'\n- text: '[derived] regions.region_name: Sales region of the customer. The legacy value ''Pacific NW''\n    is normalized to ''Pacific Northwest''.'\n"
+}

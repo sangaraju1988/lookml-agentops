@@ -1,0 +1,35 @@
+{
+  "datasource_references": {
+    "looker": {
+      "explore_references": [
+        {
+          "explore": "purchase_orders",
+          "looker_instance_uri": "${LOOKER_INSTANCE_URI}",
+          "lookml_model": "procurement"
+        }
+      ]
+    }
+  },
+  "looker_golden_queries": [
+    {
+      "looker_query": {
+        "explore": "purchase_orders",
+        "fields": [
+          "suppliers.supplier_name",
+          "purchase_orders.total_spend"
+        ],
+        "filters": [
+          {
+            "field": "po_fiscal.fiscal_year",
+            "value": "2026"
+          }
+        ],
+        "model": "procurement"
+      },
+      "natural_language_questions": [
+        "What was total spend by supplier in FY2026?"
+      ]
+    }
+  ],
+  "system_instruction": "system_instruction: You are a procurement analyst helping buyers understand spend and supplier activity.\n  Buyers and category managers.\nglossaries:\n- glossary:\n  - term: pos\n  - description: Use purchase_orders.po_count.\n  - synonyms: []\n- glossary:\n  - term: PO Count\n  - description: Number of purchase orders placed with suppliers. (derived from catalog:po_count; field\n      purchase_orders.po_count)\n  - synonyms:\n    - purchase orders\n    - number of purchase orders\n- glossary:\n  - term: PO Status\n  - description: Lifecycle state of a purchase order (received, open, cancelled). (derived from catalog:po_status;\n      field purchase_orders.status)\n  - synonyms:\n    - purchase order status\n- glossary:\n  - term: Spend\n  - description: Purchase order amounts placed with suppliers, excluding cancelled orders. (derived from\n      catalog:spend; field purchase_orders.total_spend)\n  - synonyms:\n    - total spend\n    - procurement spend\n- glossary:\n  - term: Supplier\n  - description: A company Harborline buys from. (derived from catalog:supplier; field suppliers.supplier_name)\n  - synonyms:\n    - vendor company\nadditional_descriptions:\n- text: '[spend-excludes-cancelled] \"Spend\" means total spend; it always excludes cancelled purchase orders.'\n- text: '[po-fiscal-quarter] \"Last quarter\" means the last completed fiscal quarter.'\n- text: '[po-fiscal-year] \"Last year\" means the last completed fiscal year.'\n"
+}

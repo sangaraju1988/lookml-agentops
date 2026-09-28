@@ -5,11 +5,11 @@ from __future__ import annotations
 import contextlib
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 from lookml_agentops.catalog import Catalog, load_catalog
 from lookml_agentops.config import LkagentConfig
-from lookml_agentops.lookml.model import CATALOG_PROJECT, Loc
+from lookml_agentops.lookml.model import ROOT_PROJECT, Loc
 from lookml_agentops.lookml.resolve import (
     EffectiveModel,
     Workspace,
@@ -55,9 +55,18 @@ class LintContext:
     models: dict[str, EffectiveModel]
     catalog: Catalog
     catalog_rel: str
+    _spec_findings: list[Any] | None = None
+
+    def spec_findings(self) -> list[Any]:
+        """Findings from parsing, resolving and binding every agent spec (computed once)."""
+        if self._spec_findings is None:
+            from lookml_agentops.generate.compile import bind_all
+
+            self._spec_findings = bind_all(self.cfg, self.models).findings
+        return self._spec_findings
 
     def catalog_loc(self, term_id: str) -> Loc:
-        return Loc(CATALOG_PROJECT, self.catalog_rel, self.catalog.lines.get(term_id, 1))
+        return Loc(ROOT_PROJECT, self.catalog_rel, self.catalog.lines.get(term_id, 1))
 
 
 @dataclass(frozen=True)

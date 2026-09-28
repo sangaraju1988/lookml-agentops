@@ -1,0 +1,589 @@
+{
+  "agent_id": "finance-analyst",
+  "audience": {
+    "source": {
+      "file": "agents/finance-analyst.agent.md",
+      "line": 18
+    },
+    "text": "Finance managers comfortable with accounting terms, not SQL."
+  },
+  "content_hash": "4521e115250eb3c0f798ea8d067c3a0bf492cd64025a3e945631b4d94f16406a",
+  "derive": {
+    "catalog_glossary": true,
+    "lookml_descriptions": true
+  },
+  "derived": {
+    "descriptions": [
+      {
+        "field": "created_fiscal.fiscal_quarter_label",
+        "source": "lookml:core_project/views/fiscal_calendar.view.lkml:23",
+        "text": "Fiscal quarter such as FY2026-Q3."
+      },
+      {
+        "field": "created_fiscal.fiscal_year",
+        "source": "lookml:core_project/views/fiscal_calendar.view.lkml:14",
+        "text": "Fiscal year, named by the calendar year in which it ends."
+      },
+      {
+        "field": "customers.company_name",
+        "source": "lookml:core_project/views/customers.view.lkml:13",
+        "text": "Legal name of the customer company."
+      },
+      {
+        "field": "customers.company_name",
+        "source": "lookml:core_project/views/customers.view.lkml:13",
+        "text": "Legal name of the customer company."
+      },
+      {
+        "field": "customers.segment",
+        "source": "lookml:core_project/views/customers.view.lkml:66",
+        "text": "Enterprise, Mid-Market or SMB."
+      },
+      {
+        "field": "customers.segment",
+        "source": "lookml:core_project/views/customers.view.lkml:66",
+        "text": "Enterprise, Mid-Market or SMB."
+      },
+      {
+        "field": "invoice_fiscal.fiscal_quarter_label",
+        "source": "lookml:core_project/views/fiscal_calendar.view.lkml:23",
+        "text": "Fiscal quarter such as FY2026-Q3."
+      },
+      {
+        "field": "invoice_fiscal.fiscal_year",
+        "source": "lookml:core_project/views/fiscal_calendar.view.lkml:14",
+        "text": "Fiscal year, named by the calendar year in which it ends."
+      },
+      {
+        "field": "invoices.recognized_revenue",
+        "source": "lookml:core_project/views/invoices.view.lkml:50",
+        "text": "Invoiced amount (net of discounts) recognized on the invoice date, excluding void invoices."
+      },
+      {
+        "field": "orders.active_customer_count",
+        "source": "lookml:core_project/views/orders.view.lkml:96",
+        "text": "Distinct customers with at least one order in the period."
+      },
+      {
+        "field": "orders.active_customer_count",
+        "source": "lookml:core_project/views/orders.view.lkml:96",
+        "text": "Distinct customers with at least one order in the period."
+      },
+      {
+        "field": "orders.gross_revenue",
+        "source": "lookml:finance_project/views/finance_refinements.view.lkml:5",
+        "text": "Sum of order line amounts before discounts and refunds. Finance calls this 'bookings'. Never use it when someone asks for 'revenue' without qualification."
+      },
+      {
+        "field": "orders.gross_revenue",
+        "source": "lookml:finance_project/views/finance_refinements.view.lkml:5",
+        "text": "Sum of order line amounts before discounts and refunds. Finance calls this 'bookings'. Never use it when someone asks for 'revenue' without qualification."
+      },
+      {
+        "field": "orders.net_revenue",
+        "source": "lookml:core_project/views/orders.view.lkml:87",
+        "text": "Gross revenue minus discounts minus refunds, attributed to the order date (late refunds reduce the period of the original order)."
+      },
+      {
+        "field": "orders.net_revenue",
+        "source": "lookml:core_project/views/orders.view.lkml:87",
+        "text": "Gross revenue minus discounts minus refunds, attributed to the order date (late refunds reduce the period of the original order)."
+      },
+      {
+        "field": "orders.order_count",
+        "source": "lookml:core_project/views/orders.view.lkml:62",
+        "text": "Number of orders (excluding test accounts and soft-deleted orders)."
+      },
+      {
+        "field": "orders.order_count",
+        "source": "lookml:core_project/views/orders.view.lkml:62",
+        "text": "Number of orders (excluding test accounts and soft-deleted orders)."
+      },
+      {
+        "field": "orders.refund_rate",
+        "source": "lookml:finance_project/views/finance_refinements.view.lkml:10",
+        "text": "Refunds attributed to the order period divided by gross revenue."
+      },
+      {
+        "field": "orders.refund_rate",
+        "source": "lookml:finance_project/views/finance_refinements.view.lkml:10",
+        "text": "Refunds attributed to the order period divided by gross revenue."
+      },
+      {
+        "field": "payments.days_sales_outstanding",
+        "source": "lookml:finance_project/views/finance_refinements.view.lkml:22",
+        "text": "Average number of days from invoice date to payment date for paid invoices."
+      },
+      {
+        "field": "regions.region_name",
+        "source": "lookml:core_project/views/regions.view.lkml:13",
+        "text": "Sales region of the customer. The legacy value 'Pacific NW' is normalized to 'Pacific Northwest'."
+      },
+      {
+        "field": "regions.region_name",
+        "source": "lookml:core_project/views/regions.view.lkml:13",
+        "text": "Sales region of the customer. The legacy value 'Pacific NW' is normalized to 'Pacific Northwest'."
+      }
+    ],
+    "glossary": [
+      {
+        "description": "A non-test customer with at least one non-deleted order in the period.",
+        "field": "orders.active_customer_count",
+        "source": "catalog:active_customer",
+        "synonyms": [
+          "active customers",
+          "buying customers"
+        ],
+        "term": "Active Customer"
+      },
+      {
+        "description": "A business that buys from Harborline, identified by its legal company name.",
+        "field": "customers.company_name",
+        "source": "catalog:customer",
+        "synonyms": [
+          "customer name",
+          "account"
+        ],
+        "term": "Customer"
+      },
+      {
+        "description": "Enterprise, Mid-Market or SMB, based on annual spend band.",
+        "field": "customers.segment",
+        "source": "catalog:customer_segment",
+        "synonyms": [
+          "segment"
+        ],
+        "term": "Customer Segment"
+      },
+      {
+        "description": "Average days from invoice date to payment date for paid invoices.",
+        "field": "payments.days_sales_outstanding",
+        "source": "catalog:days_sales_outstanding",
+        "synonyms": [
+          "dso",
+          "days to pay"
+        ],
+        "term": "Days Sales Outstanding"
+      },
+      {
+        "description": "A three-month period of the Harborline fiscal year, which starts February 1. \"Last quarter\" means the last completed fiscal quarter.",
+        "field": "created_fiscal.fiscal_quarter_label",
+        "source": "catalog:fiscal_quarter",
+        "synonyms": [
+          "quarter",
+          "fiscal qtr"
+        ],
+        "term": "Fiscal Quarter"
+      },
+      {
+        "description": "February 1 to January 31, named by the calendar year in which it ends (FY2026 = Feb 2025 to Jan 2026).",
+        "field": "created_fiscal.fiscal_year",
+        "source": "catalog:fiscal_year",
+        "synonyms": [
+          "fy"
+        ],
+        "term": "Fiscal Year"
+      },
+      {
+        "description": "Sum of order line amounts before discounts and refunds.",
+        "field": "orders.gross_revenue",
+        "source": "catalog:gross_revenue",
+        "synonyms": [
+          "gross sales",
+          "bookings"
+        ],
+        "term": "Gross Revenue"
+      },
+      {
+        "description": "Gross order revenue minus discounts minus refunds, attributed to the order date. This is the company's default meaning of \"revenue\" and \"sales\".",
+        "field": "orders.net_revenue",
+        "source": "catalog:net_revenue",
+        "synonyms": [
+          "revenue",
+          "sales",
+          "net sales",
+          "turnover"
+        ],
+        "term": "Net Revenue"
+      },
+      {
+        "description": "Number of orders, excluding test accounts and soft-deleted orders.",
+        "field": "orders.order_count",
+        "source": "catalog:order_count",
+        "synonyms": [
+          "orders",
+          "number of orders",
+          "order volume"
+        ],
+        "term": "Order Count"
+      },
+      {
+        "description": "Invoiced amount recognized on the invoice date, excluding void invoices.",
+        "field": "invoices.recognized_revenue",
+        "source": "catalog:recognized_revenue",
+        "synonyms": [
+          "invoiced revenue",
+          "billed revenue"
+        ],
+        "term": "Recognized Revenue"
+      },
+      {
+        "description": "Refunds attributed to the order period divided by gross revenue.",
+        "field": "orders.refund_rate",
+        "source": "catalog:refund_rate",
+        "synonyms": [
+          "refund percentage"
+        ],
+        "term": "Refund Rate"
+      },
+      {
+        "description": "Sales region of the customer. \"Pacific NW\" is a legacy spelling of \"Pacific Northwest\".",
+        "field": "regions.region_name",
+        "source": "catalog:region",
+        "synonyms": [
+          "sales region",
+          "territory"
+        ],
+        "term": "Region"
+      }
+    ]
+  },
+  "description": "Answers FP&A questions on revenue, invoices, refunds and collections.",
+  "explores": [
+    {
+      "default_time_field": "orders.created",
+      "description": "Finance view of orders: net, gross revenue, refunds and customers by fiscal period.",
+      "explore": "finance_orders",
+      "fiscal_alias": "created_fiscal",
+      "label": "Finance: Orders & Revenue",
+      "model": "finance",
+      "project": "finance_project"
+    },
+    {
+      "default_time_field": "invoices.invoice",
+      "description": "Recognized revenue by invoice date, and collections (DSO).",
+      "explore": "finance_invoices",
+      "fiscal_alias": "invoice_fiscal",
+      "label": "Finance: Invoices & Collections",
+      "model": "finance",
+      "project": "finance_project"
+    }
+  ],
+  "extends_chain": [
+    {
+      "agent_id": "company-baseline",
+      "file": "agents/shared/company-baseline.agent.md"
+    }
+  ],
+  "golden_queries": [
+    {
+      "explore_url": null,
+      "golden_id": "gq-net-rev-region",
+      "looker_query": {
+        "explore": "finance_orders",
+        "fields": [
+          "regions.region_name",
+          "orders.net_revenue"
+        ],
+        "filters": [
+          {
+            "field": "created_fiscal.fiscal_quarter_label",
+            "value": "FY2026-Q3"
+          }
+        ],
+        "limit": null,
+        "model": "finance",
+        "pivots": [],
+        "sorts": [
+          "orders.net_revenue desc"
+        ]
+      },
+      "origin_agent": "finance-analyst",
+      "questions": [
+        "What was net revenue by region in FY2026-Q3?",
+        "Net revenue split by region for FY2026 Q3"
+      ],
+      "resolved_from": "inline",
+      "source": {
+        "file": "agents/finance-analyst.agent.md",
+        "line": 33
+      }
+    },
+    {
+      "explore_url": null,
+      "golden_id": "gq-recognized-by-quarter",
+      "looker_query": {
+        "explore": "finance_invoices",
+        "fields": [
+          "invoice_fiscal.fiscal_quarter_label",
+          "invoices.recognized_revenue"
+        ],
+        "filters": [
+          {
+            "field": "invoices.is_void",
+            "value": "no"
+          }
+        ],
+        "limit": null,
+        "model": "finance",
+        "pivots": [],
+        "sorts": []
+      },
+      "origin_agent": "finance-analyst",
+      "questions": [
+        "Show recognized revenue by fiscal quarter"
+      ],
+      "resolved_from": "inline",
+      "source": {
+        "file": "agents/finance-analyst.agent.md",
+        "line": 44
+      }
+    }
+  ],
+  "guardrails": [
+    {
+      "covers": [
+        "finance_invoices/customers.billing_address",
+        "finance_invoices/customers.contact_name",
+        "finance_invoices/customers.date_of_birth",
+        "finance_invoices/customers.email",
+        "finance_invoices/customers.phone",
+        "finance_orders/customers.billing_address",
+        "finance_orders/customers.contact_name",
+        "finance_orders/customers.date_of_birth",
+        "finance_orders/customers.email",
+        "finance_orders/customers.phone"
+      ],
+      "guardrail_id": "no-customer-pii",
+      "origin_agent": "company-baseline",
+      "pii_kinds": [
+        "address",
+        "dob",
+        "email",
+        "name",
+        "phone"
+      ],
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 25
+      },
+      "text": "Never return customer email, phone, date of birth, billing address or contact name."
+    }
+  ],
+  "role": {
+    "source": {
+      "file": "agents/finance-analyst.agent.md",
+      "line": 14
+    },
+    "text": "You are a finance analyst supporting FP&A at Harborline Supply Co. Be concise and always state\nthe fiscal period used."
+  },
+  "rules": [
+    {
+      "claims": [
+        {
+          "explore": "finance_orders",
+          "field": "orders.net_revenue",
+          "kind": "vocabulary",
+          "subject": "revenue",
+          "value": "net revenue"
+        }
+      ],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "revenue-default",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 7
+      },
+      "text": "\"Revenue\" means net revenue unless the user explicitly says gross."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last quarter",
+          "value": "last_completed_fiscal_quarter"
+        }
+      ],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "fiscal-quarter",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 10
+      },
+      "text": "\"Last quarter\" means the last completed fiscal quarter; the fiscal year starts February 1."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last year",
+          "value": "last_completed_fiscal_year"
+        }
+      ],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "fiscal-year",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 13
+      },
+      "text": "\"Last year\" means the last completed fiscal year (FY2026 = Feb 2025 to Jan 2026)."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last month",
+          "value": "last_completed_month"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "last-month",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 16
+      },
+      "text": "\"Last month\" means the last completed calendar month."
+    },
+    {
+      "claims": [],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "exclude-test-accounts",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 18
+      },
+      "text": "Never include test accounts or soft-deleted orders, even when asked for all data."
+    },
+    {
+      "claims": [],
+      "locked": false,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "state-the-period",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 21
+      },
+      "text": "Always state the time period an answer covers."
+    },
+    {
+      "claims": [
+        {
+          "explore": "finance_orders",
+          "field": "orders.net_revenue",
+          "kind": "vocabulary",
+          "subject": "sales",
+          "value": "net revenue"
+        },
+        {
+          "explore": "finance_orders",
+          "field": "orders.net_revenue",
+          "kind": "vocabulary",
+          "subject": "net sales",
+          "value": "net revenue"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "finance-analyst",
+      "overridden_by": null,
+      "rule_id": "sales-means-net",
+      "source": {
+        "file": "agents/finance-analyst.agent.md",
+        "line": 21
+      },
+      "text": "\"Sales\" and \"net sales\" mean net revenue."
+    },
+    {
+      "claims": [
+        {
+          "explore": "finance_orders",
+          "field": "created_fiscal.fiscal_quarter_label",
+          "kind": "vocabulary",
+          "subject": "quarter",
+          "value": "fiscal quarter"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "finance-analyst",
+      "overridden_by": null,
+      "rule_id": "quarter-is-fiscal",
+      "source": {
+        "file": "agents/finance-analyst.agent.md",
+        "line": 23
+      },
+      "text": "\"Quarter\" means fiscal quarter."
+    },
+    {
+      "claims": [
+        {
+          "explore": "finance_invoices",
+          "field": "invoices.recognized_revenue",
+          "kind": "vocabulary",
+          "subject": "recognized revenue",
+          "value": "recognized revenue"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "finance-analyst",
+      "overridden_by": null,
+      "rule_id": "recognized-by-invoice-date",
+      "source": {
+        "file": "agents/finance-analyst.agent.md",
+        "line": 25
+      },
+      "text": "\"Recognized revenue\" means recognized revenue; report it by invoice date."
+    }
+  ],
+  "schema_version": "agent_spec.v1",
+  "source": {
+    "file": "agents/finance-analyst.agent.md",
+    "line": 1
+  },
+  "vocabulary": [
+    {
+      "explore": "finance_invoices",
+      "field": "payments.days_sales_outstanding",
+      "origin_agent": "finance-analyst",
+      "phrases": [
+        "collection days",
+        "time to collect"
+      ],
+      "source": {
+        "file": "agents/finance-analyst.agent.md",
+        "line": 29
+      },
+      "target": "finance_invoices.days_sales_outstanding",
+      "vocab_id": "finance-analyst-collection-days"
+    },
+    {
+      "explore": "finance_orders",
+      "field": "orders.refund_rate",
+      "origin_agent": "finance-analyst",
+      "phrases": [
+        "returns ratio"
+      ],
+      "source": {
+        "file": "agents/finance-analyst.agent.md",
+        "line": 30
+      },
+      "target": "finance_orders.refund_rate",
+      "vocab_id": "finance-analyst-returns-ratio"
+    }
+  ]
+}

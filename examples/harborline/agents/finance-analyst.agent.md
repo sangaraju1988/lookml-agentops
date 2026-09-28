@@ -26,9 +26,8 @@ Finance managers comfortable with accounting terms, not SQL.
   text: '"Recognized revenue" means recognized revenue; report it by invoice date.'
 
 ## Vocabulary
-- "DSO", "days to pay" → finance_invoices.days_sales_outstanding
-- "bookings" → finance_orders.gross_revenue
-- "refund percentage" → finance_orders.refund_rate
+- "collection days", "time to collect" → finance_invoices.days_sales_outstanding
+- "returns ratio" → finance_orders.refund_rate
 
 ## Golden queries
 - id: gq-net-rev-region

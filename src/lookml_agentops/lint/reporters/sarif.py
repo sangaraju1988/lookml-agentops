@@ -9,13 +9,13 @@ from typing import Any
 from lookml_agentops import __version__
 from lookml_agentops.config import LkagentConfig
 from lookml_agentops.lint.engine import LintResult
-from lookml_agentops.lookml.model import CATALOG_PROJECT, Loc
+from lookml_agentops.lookml.model import ROOT_PROJECT, Loc
 
 LEVEL = {"error": "error", "warning": "warning", "note": "note"}
 
 
 def _uri(cfg: LkagentConfig, loc: Loc, base: Path) -> str:
-    if loc.project == CATALOG_PROJECT:
+    if loc.project == ROOT_PROJECT:
         abs_path = cfg.root / loc.file
     else:
         abs_path = cfg.project_path(loc.project) / loc.file

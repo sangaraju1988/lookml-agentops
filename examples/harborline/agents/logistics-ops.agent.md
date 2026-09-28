@@ -24,8 +24,8 @@ Logistics and warehouse managers.
   text: '"Transit time" means average transit days.'
 
 ## Vocabulary
-- "OTD", "on-time rate" → logistics_shipments.on_time_delivery_rate
-- "DC" → logistics_shipments.warehouse_name
+- "punctuality" → logistics_shipments.on_time_delivery_rate
+- "fulfillment center" → logistics_shipments.warehouse_name
 
 ## Golden queries
 - id: gq-otd-by-carrier

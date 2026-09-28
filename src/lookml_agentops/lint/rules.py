@@ -7,10 +7,17 @@ de-duplicates identical findings, so rules can simply iterate over every model.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 
 from lookml_agentops.lint.engine import LintContext, RawFinding, Rule
-from lookml_agentops.lookml.model import LExplore, LField, Loc, LView, expand_field_names
+from lookml_agentops.lookml.model import (
+    ROOT_PROJECT,
+    LExplore,
+    LField,
+    Loc,
+    LView,
+    expand_field_names,
+)
 
 PII_NAME_RX = re.compile(
     r"(e_?mail|phone|mobile|\bdob\b|date_of_birth|birth_?date|ssn|social_security|"
@@ -296,6 +303,115 @@ def check_explore_description(ctx: LintContext) -> Iterator[RawFinding]:
                 )
 
 
+def _spec(rule_id: str) -> Callable[[LintContext], Iterator[RawFinding]]:
+    def check(ctx: LintContext) -> Iterator[RawFinding]:
+        for f in ctx.spec_findings():
+            if f.rule_id == rule_id:
+                yield RawFinding(f.message, f.obj, Loc(ROOT_PROJECT, f.file, f.line))
+
+    return check
+
+
+SPEC_RULES: list[Rule] = [
+    Rule(
+        "LKS001",
+        "spec-invalid",
+        "error",
+        "The spec must parse: valid frontmatter and only known sections, so nothing is silently ignored.",
+        "Fix the frontmatter keys or rename the section (Role, Audience, Rules, Vocabulary, Guardrails, "
+        "Golden queries).",
+        _spec("LKS001"),
+    ),
+    Rule(
+        "LKS002",
+        "unknown-explore",
+        "error",
+        "An agent can only use explores that exist and are queryable in the resolved model.",
+        "Use <project>::<explore> for an explore that is not `extension: required`.",
+        _spec("LKS002"),
+    ),
+    Rule(
+        "LKS003",
+        "too-many-explores",
+        "error",
+        "A Conversational Analytics data agent can connect to at most five Looker explores.",
+        "Split the agent or drop explores.",
+        _spec("LKS003"),
+    ),
+    Rule(
+        "LKS004",
+        "unknown-field",
+        "error",
+        "Vocabulary, rules and golden queries must reference fields that exist in the agent's explores.",
+        "Fix the field reference (explore.field or view.field).",
+        _spec("LKS004"),
+    ),
+    Rule(
+        "LKS005",
+        "golden-query-pivot",
+        "error",
+        "Conversational Analytics does not generate pivoted queries, so pivoted golden queries mislead it.",
+        "Remove pivots from the golden query.",
+        _spec("LKS005"),
+    ),
+    Rule(
+        "LKS006",
+        "golden-query-foreign-explore",
+        "error",
+        "Golden queries must use the agent's own explores (and their model).",
+        "Point the golden query at one of the agent's explores or add the explore.",
+        _spec("LKS006"),
+    ),
+    Rule(
+        "LKS007",
+        "duplicate-spec-id",
+        "error",
+        "Rule and golden-query ids drive tests and attribution, so they must be unique across the extends chain.",
+        "Rename one of the ids.",
+        _spec("LKS007"),
+    ),
+    Rule(
+        "LKS008",
+        "locked-rule-violation",
+        "error",
+        "A rule marked `locked: true` cannot be overridden or contradicted by a descendant spec.",
+        "Remove the conflicting rule/vocabulary, or change the locked rule in the spec that owns it.",
+        _spec("LKS008"),
+    ),
+    Rule(
+        "LKS009",
+        "placement-advice",
+        "warning",
+        "Field synonyms and definitions belong in LookML (and the catalog), where every agent sees them.",
+        "Move the synonym into LookML/catalog, or drop the duplicate from the spec.",
+        _spec("LKS009"),
+    ),
+    Rule(
+        "LKS010",
+        "pii-guardrail-missing",
+        "error",
+        "If an agent's explores expose PII, the spec must say what the agent may never return.",
+        "Add a guardrail naming the PII (e.g. 'Never return customer email or phone.').",
+        _spec("LKS010"),
+    ),
+    Rule(
+        "LKS011",
+        "spec-extends-error",
+        "error",
+        "Extends targets must exist and must not form a cycle.",
+        "Fix the extends path or break the cycle.",
+        _spec("LKS011"),
+    ),
+    Rule(
+        "LKS012",
+        "golden-url-unresolved",
+        "warning",
+        "Explore URLs must be resolved to Looker queries before they can be exported.",
+        "Run `lkagent generate resolve-golden`, or write the golden query inline as looker_query.",
+        _spec("LKS012"),
+    ),
+]
+
 ALL_RULES: list[Rule] = [
     Rule(
         "LKA000",
@@ -450,3 +566,4 @@ ALL_RULES: list[Rule] = [
         check_access_grant_defined,
     ),
 ]
+ALL_RULES += SPEC_RULES

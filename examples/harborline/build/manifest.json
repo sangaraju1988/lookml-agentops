@@ -1,0 +1,45 @@
+{
+  "agents": {
+    "finance-analyst": {
+      "content_hash": "4521e115250eb3c0f798ea8d067c3a0bf492cd64025a3e945631b4d94f16406a",
+      "extends": [
+        "company-baseline"
+      ],
+      "files": {
+        "agent_spec.json": "ef8c329484f646574602a54410837e01ce77dbd457247d9ee86c8f09eca0ec01",
+        "ca_context.json": "aa3dd6282dfae60b4c948d311791633400531f957fde4fb2bd3f39bc6dac95a3",
+        "looker_ui.md": "a049d2b8661118296a9970d40bfd91cb409961c0ef7843eac8a3b8b3a8d0ef1f",
+        "tests.generated.yaml": "0e1fcefac5a243b8724056d353b9db127a93b4a61b7572eac9fbe2952c8de6a8"
+      },
+      "rules": 9,
+      "tests": 20
+    },
+    "logistics-ops": {
+      "content_hash": "9ce621ed770d5a449809d80a1e6556b3900d9a476b8668bb479a5a41b114d6f3",
+      "extends": [
+        "company-baseline"
+      ],
+      "files": {
+        "agent_spec.json": "394924db1b91a9d62f36d1b2f1f4dbfe16d5c60b57894b080aa450696d7d4734",
+        "ca_context.json": "61d65a35760718cebf6bce627a6eeb8ba25af77736fa9753bae5f5d498f4f981",
+        "looker_ui.md": "94b4bb14673ed48118b663af6083fcc1cce8b0541cf07b30369910dfe389b771",
+        "tests.generated.yaml": "def7b47f34c6adf2e249e5ecc5a1297f6bdbf6163d6068bf7df16f3706448b01"
+      },
+      "rules": 9,
+      "tests": 17
+    },
+    "procurement-buyer": {
+      "content_hash": "d5dd1be4c26a48c1fde1246a1ad8bc22a37fadbff75844b26fe556fbea76c312",
+      "extends": [],
+      "files": {
+        "agent_spec.json": "71cc8155eee31d70e7c9e5106167719f44199db1b5da4d8e8e045bf3d64012c7",
+        "ca_context.json": "26e51fe29ca5f3ebd9c11ea8755982969a9afced14e4919cf24d4dd66e953f2a",
+        "looker_ui.md": "60459d2c076e055c9cfec4bd1e4affaa0dc89c57831b2b95f7a9b252f7f97b74",
+        "tests.generated.yaml": "cfd26423d3048bdf0eb9e1deeab9c45a60aabb27b7ee2dc45ae9b9fa59c3ec5e"
+      },
+      "rules": 3,
+      "tests": 5
+    }
+  },
+  "schema": "lkagent.build.v2"
+}

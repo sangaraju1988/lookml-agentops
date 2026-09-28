@@ -1,0 +1,193 @@
+{
+  "agent_id": "procurement-buyer",
+  "audience": {
+    "source": {
+      "file": "agents/procurement-buyer.agent.md",
+      "line": 14
+    },
+    "text": "Buyers and category managers."
+  },
+  "content_hash": "d5dd1be4c26a48c1fde1246a1ad8bc22a37fadbff75844b26fe556fbea76c312",
+  "derive": {
+    "catalog_glossary": true
+  },
+  "derived": {
+    "descriptions": [],
+    "glossary": [
+      {
+        "description": "Number of purchase orders placed with suppliers.",
+        "field": "purchase_orders.po_count",
+        "source": "catalog:po_count",
+        "synonyms": [
+          "purchase orders",
+          "number of purchase orders"
+        ],
+        "term": "PO Count"
+      },
+      {
+        "description": "Lifecycle state of a purchase order (received, open, cancelled).",
+        "field": "purchase_orders.status",
+        "source": "catalog:po_status",
+        "synonyms": [
+          "purchase order status"
+        ],
+        "term": "PO Status"
+      },
+      {
+        "description": "Purchase order amounts placed with suppliers, excluding cancelled orders.",
+        "field": "purchase_orders.total_spend",
+        "source": "catalog:spend",
+        "synonyms": [
+          "total spend",
+          "procurement spend"
+        ],
+        "term": "Spend"
+      },
+      {
+        "description": "A company Harborline buys from.",
+        "field": "suppliers.supplier_name",
+        "source": "catalog:supplier",
+        "synonyms": [
+          "vendor company"
+        ],
+        "term": "Supplier"
+      }
+    ]
+  },
+  "description": "Answers purchasing questions on suppliers, purchase orders and spend.",
+  "explores": [
+    {
+      "default_time_field": "purchase_orders.ordered",
+      "description": "Purchase orders placed with suppliers, by order date and fiscal period. Cancelled orders are excluded from spend.",
+      "explore": "purchase_orders",
+      "fiscal_alias": "po_fiscal",
+      "label": "Procurement: Purchase Orders",
+      "model": "procurement",
+      "project": "procurement_project"
+    }
+  ],
+  "extends_chain": [],
+  "golden_queries": [
+    {
+      "explore_url": null,
+      "golden_id": "gq-spend-by-supplier",
+      "looker_query": {
+        "explore": "purchase_orders",
+        "fields": [
+          "suppliers.supplier_name",
+          "purchase_orders.total_spend"
+        ],
+        "filters": [
+          {
+            "field": "po_fiscal.fiscal_year",
+            "value": "2026"
+          }
+        ],
+        "limit": null,
+        "model": "procurement",
+        "pivots": [],
+        "sorts": []
+      },
+      "origin_agent": "procurement-buyer",
+      "questions": [
+        "What was total spend by supplier in FY2026?"
+      ],
+      "resolved_from": "inline",
+      "source": {
+        "file": "agents/procurement-buyer.agent.md",
+        "line": 28
+      }
+    }
+  ],
+  "guardrails": [],
+  "role": {
+    "source": {
+      "file": "agents/procurement-buyer.agent.md",
+      "line": 11
+    },
+    "text": "You are a procurement analyst helping buyers understand spend and supplier activity."
+  },
+  "rules": [
+    {
+      "claims": [
+        {
+          "explore": "purchase_orders",
+          "field": "purchase_orders.total_spend",
+          "kind": "vocabulary",
+          "subject": "spend",
+          "value": "total spend"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "procurement-buyer",
+      "overridden_by": null,
+      "rule_id": "spend-excludes-cancelled",
+      "source": {
+        "file": "agents/procurement-buyer.agent.md",
+        "line": 17
+      },
+      "text": "\"Spend\" means total spend; it always excludes cancelled purchase orders."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last quarter",
+          "value": "last_completed_fiscal_quarter"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "procurement-buyer",
+      "overridden_by": null,
+      "rule_id": "po-fiscal-quarter",
+      "source": {
+        "file": "agents/procurement-buyer.agent.md",
+        "line": 19
+      },
+      "text": "\"Last quarter\" means the last completed fiscal quarter."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last year",
+          "value": "last_completed_fiscal_year"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "procurement-buyer",
+      "overridden_by": null,
+      "rule_id": "po-fiscal-year",
+      "source": {
+        "file": "agents/procurement-buyer.agent.md",
+        "line": 21
+      },
+      "text": "\"Last year\" means the last completed fiscal year."
+    }
+  ],
+  "schema_version": "agent_spec.v1",
+  "source": {
+    "file": "agents/procurement-buyer.agent.md",
+    "line": 1
+  },
+  "vocabulary": [
+    {
+      "explore": "purchase_orders",
+      "field": "purchase_orders.po_count",
+      "origin_agent": "procurement-buyer",
+      "phrases": [
+        "pos"
+      ],
+      "source": {
+        "file": "agents/procurement-buyer.agent.md",
+        "line": 25
+      },
+      "target": "purchase_orders.po_count",
+      "vocab_id": "procurement-buyer-pos"
+    }
+  ]
+}

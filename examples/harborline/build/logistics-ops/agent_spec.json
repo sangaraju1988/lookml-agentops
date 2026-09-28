@@ -1,0 +1,515 @@
+{
+  "agent_id": "logistics-ops",
+  "audience": {
+    "source": {
+      "file": "agents/logistics-ops.agent.md",
+      "line": 16
+    },
+    "text": "Logistics and warehouse managers."
+  },
+  "content_hash": "9ce621ed770d5a449809d80a1e6556b3900d9a476b8668bb479a5a41b114d6f3",
+  "derive": {
+    "catalog_glossary": true,
+    "lookml_descriptions": true
+  },
+  "derived": {
+    "descriptions": [
+      {
+        "field": "carriers.carrier_name",
+        "source": "lookml:logistics_project/views/logistics_refinements.view.lkml:20",
+        "text": "Carrier legal name. 'Northstar Freight' and 'North Star Freight LLC' are different carriers. Never merge them."
+      },
+      {
+        "field": "customers.company_name",
+        "source": "lookml:core_project/views/customers.view.lkml:13",
+        "text": "Legal name of the customer company."
+      },
+      {
+        "field": "customers.segment",
+        "source": "lookml:core_project/views/customers.view.lkml:66",
+        "text": "Enterprise, Mid-Market or SMB."
+      },
+      {
+        "field": "orders.active_customer_count",
+        "source": "lookml:core_project/views/orders.view.lkml:96",
+        "text": "Distinct customers with at least one order in the period."
+      },
+      {
+        "field": "orders.gross_revenue",
+        "source": "lookml:core_project/views/orders.view.lkml:70",
+        "text": "Sum of order line amounts before discounts and refunds."
+      },
+      {
+        "field": "orders.net_revenue",
+        "source": "lookml:core_project/views/orders.view.lkml:87",
+        "text": "Gross revenue minus discounts minus refunds, attributed to the order date (late refunds reduce the period of the original order)."
+      },
+      {
+        "field": "orders.order_count",
+        "source": "lookml:core_project/views/orders.view.lkml:62",
+        "text": "Number of orders (excluding test accounts and soft-deleted orders)."
+      },
+      {
+        "field": "regions.region_name",
+        "source": "lookml:core_project/views/regions.view.lkml:13",
+        "text": "Sales region of the customer. The legacy value 'Pacific NW' is normalized to 'Pacific Northwest'."
+      },
+      {
+        "field": "shipments.avg_transit_days",
+        "source": "lookml:logistics_project/views/logistics_refinements.view.lkml:8",
+        "text": "Average days between leaving the warehouse and delivery (UTC), for delivered shipments."
+      },
+      {
+        "field": "shipments.on_time_delivery_rate",
+        "source": "lookml:core_project/views/shipments.view.lkml:106",
+        "text": "Share of delivered shipments delivered on or before the promised date."
+      },
+      {
+        "field": "shipments.shipment_count",
+        "source": "lookml:core_project/views/shipments.view.lkml:84",
+        "text": "Number of shipments."
+      },
+      {
+        "field": "shipments.status",
+        "source": "lookml:core_project/views/shipments.view.lkml:31",
+        "text": "Normalized carrier status. Raw spellings such as 'shipped' and 'SHIPPED ' are normalized to 'Shipped'. 'Shipped - Partial' is a different status."
+      },
+      {
+        "field": "shipped_fiscal.fiscal_quarter_label",
+        "source": "lookml:core_project/views/fiscal_calendar.view.lkml:23",
+        "text": "Fiscal quarter such as FY2026-Q3."
+      },
+      {
+        "field": "shipped_fiscal.fiscal_year",
+        "source": "lookml:core_project/views/fiscal_calendar.view.lkml:14",
+        "text": "Fiscal year, named by the calendar year in which it ends."
+      },
+      {
+        "field": "warehouses.warehouse_name",
+        "source": "lookml:core_project/views/warehouses.view.lkml:13",
+        "text": "Distribution center name."
+      }
+    ],
+    "glossary": [
+      {
+        "description": "A non-test customer with at least one non-deleted order in the period.",
+        "field": "orders.active_customer_count",
+        "source": "catalog:active_customer",
+        "synonyms": [
+          "active customers",
+          "buying customers"
+        ],
+        "term": "Active Customer"
+      },
+      {
+        "description": "Freight carrier that moved the shipment. \"Northstar Freight\" and \"North Star Freight LLC\" are different companies.",
+        "field": "carriers.carrier_name",
+        "source": "catalog:carrier",
+        "synonyms": [
+          "shipping carrier",
+          "freight carrier"
+        ],
+        "term": "Carrier"
+      },
+      {
+        "description": "A business that buys from Harborline, identified by its legal company name.",
+        "field": "customers.company_name",
+        "source": "catalog:customer",
+        "synonyms": [
+          "customer name",
+          "account"
+        ],
+        "term": "Customer"
+      },
+      {
+        "description": "Enterprise, Mid-Market or SMB, based on annual spend band.",
+        "field": "customers.segment",
+        "source": "catalog:customer_segment",
+        "synonyms": [
+          "segment"
+        ],
+        "term": "Customer Segment"
+      },
+      {
+        "description": "A three-month period of the Harborline fiscal year, which starts February 1. \"Last quarter\" means the last completed fiscal quarter.",
+        "field": "shipped_fiscal.fiscal_quarter_label",
+        "source": "catalog:fiscal_quarter",
+        "synonyms": [
+          "quarter",
+          "fiscal qtr"
+        ],
+        "term": "Fiscal Quarter"
+      },
+      {
+        "description": "February 1 to January 31, named by the calendar year in which it ends (FY2026 = Feb 2025 to Jan 2026).",
+        "field": "shipped_fiscal.fiscal_year",
+        "source": "catalog:fiscal_year",
+        "synonyms": [
+          "fy"
+        ],
+        "term": "Fiscal Year"
+      },
+      {
+        "description": "Sum of order line amounts before discounts and refunds.",
+        "field": "orders.gross_revenue",
+        "source": "catalog:gross_revenue",
+        "synonyms": [
+          "gross sales",
+          "bookings"
+        ],
+        "term": "Gross Revenue"
+      },
+      {
+        "description": "Gross order revenue minus discounts minus refunds, attributed to the order date. This is the company's default meaning of \"revenue\" and \"sales\".",
+        "field": "orders.net_revenue",
+        "source": "catalog:net_revenue",
+        "synonyms": [
+          "revenue",
+          "sales",
+          "net sales",
+          "turnover"
+        ],
+        "term": "Net Revenue"
+      },
+      {
+        "description": "Share of delivered shipments delivered on or before the promised date.",
+        "field": "shipments.on_time_delivery_rate",
+        "source": "catalog:on_time_delivery",
+        "synonyms": [
+          "on-time rate",
+          "otd",
+          "on time delivery rate"
+        ],
+        "term": "On-Time Delivery"
+      },
+      {
+        "description": "Number of orders, excluding test accounts and soft-deleted orders.",
+        "field": "orders.order_count",
+        "source": "catalog:order_count",
+        "synonyms": [
+          "orders",
+          "number of orders",
+          "order volume"
+        ],
+        "term": "Order Count"
+      },
+      {
+        "description": "Sales region of the customer. \"Pacific NW\" is a legacy spelling of \"Pacific Northwest\".",
+        "field": "regions.region_name",
+        "source": "catalog:region",
+        "synonyms": [
+          "sales region",
+          "territory"
+        ],
+        "term": "Region"
+      },
+      {
+        "description": "Number of shipments that left a Harborline warehouse.",
+        "field": "shipments.shipment_count",
+        "source": "catalog:shipment_count",
+        "synonyms": [
+          "shipments",
+          "number of shipments"
+        ],
+        "term": "Shipment Count"
+      },
+      {
+        "description": "Normalized carrier status. \"Shipped\" and \"Shipped - Partial\" are different statuses.",
+        "field": "shipments.status",
+        "source": "catalog:shipment_status",
+        "synonyms": [
+          "status"
+        ],
+        "term": "Shipment Status"
+      },
+      {
+        "description": "Days between a shipment leaving the warehouse and its delivery, measured in UTC.",
+        "field": "shipments.avg_transit_days",
+        "source": "catalog:transit_time",
+        "synonyms": [
+          "transit days",
+          "average transit time",
+          "delivery time"
+        ],
+        "term": "Transit Time"
+      },
+      {
+        "description": "Harborline distribution center that fulfilled the order.",
+        "field": "warehouses.warehouse_name",
+        "source": "catalog:warehouse",
+        "synonyms": [
+          "distribution center",
+          "dc"
+        ],
+        "term": "Warehouse"
+      }
+    ]
+  },
+  "description": "Answers shipment, carrier and delivery-performance questions for logistics operations.",
+  "explores": [
+    {
+      "default_time_field": "shipments.shipped",
+      "description": "Shipments, carriers, warehouses and delivery performance by fiscal period.",
+      "explore": "logistics_shipments",
+      "fiscal_alias": "shipped_fiscal",
+      "label": "Logistics: Shipments",
+      "model": "logistics",
+      "project": "logistics_project"
+    }
+  ],
+  "extends_chain": [
+    {
+      "agent_id": "company-baseline",
+      "file": "agents/shared/company-baseline.agent.md"
+    }
+  ],
+  "golden_queries": [
+    {
+      "explore_url": null,
+      "golden_id": "gq-otd-by-carrier",
+      "looker_query": {
+        "explore": "logistics_shipments",
+        "fields": [
+          "carriers.carrier_name",
+          "shipments.on_time_delivery_rate"
+        ],
+        "filters": [
+          {
+            "field": "shipped_fiscal.fiscal_quarter_label",
+            "value": "FY2026-Q3"
+          }
+        ],
+        "limit": null,
+        "model": "logistics",
+        "pivots": [],
+        "sorts": []
+      },
+      "origin_agent": "logistics-ops",
+      "questions": [
+        "What was the on-time delivery rate by carrier in FY2026-Q3?"
+      ],
+      "resolved_from": "inline",
+      "source": {
+        "file": "agents/logistics-ops.agent.md",
+        "line": 31
+      }
+    }
+  ],
+  "guardrails": [
+    {
+      "covers": [
+        "logistics_shipments/customers.billing_address",
+        "logistics_shipments/customers.contact_name",
+        "logistics_shipments/customers.date_of_birth",
+        "logistics_shipments/customers.email",
+        "logistics_shipments/customers.phone"
+      ],
+      "guardrail_id": "no-customer-pii",
+      "origin_agent": "company-baseline",
+      "pii_kinds": [
+        "address",
+        "dob",
+        "email",
+        "name",
+        "phone"
+      ],
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 25
+      },
+      "text": "Never return customer email, phone, date of birth, billing address or contact name."
+    }
+  ],
+  "role": {
+    "source": {
+      "file": "agents/logistics-ops.agent.md",
+      "line": 13
+    },
+    "text": "You are a logistics operations analyst. Report shipment dates in UTC and name carriers exactly."
+  },
+  "rules": [
+    {
+      "claims": [
+        {
+          "explore": "logistics_shipments",
+          "field": "orders.net_revenue",
+          "kind": "vocabulary",
+          "subject": "revenue",
+          "value": "net revenue"
+        }
+      ],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "revenue-default",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 7
+      },
+      "text": "\"Revenue\" means net revenue unless the user explicitly says gross."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last quarter",
+          "value": "last_completed_fiscal_quarter"
+        }
+      ],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "fiscal-quarter",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 10
+      },
+      "text": "\"Last quarter\" means the last completed fiscal quarter; the fiscal year starts February 1."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last year",
+          "value": "last_completed_fiscal_year"
+        }
+      ],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "fiscal-year",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 13
+      },
+      "text": "\"Last year\" means the last completed fiscal year (FY2026 = Feb 2025 to Jan 2026)."
+    },
+    {
+      "claims": [
+        {
+          "explore": null,
+          "field": null,
+          "kind": "time_period",
+          "subject": "last month",
+          "value": "last_completed_month"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "last-month",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 16
+      },
+      "text": "\"Last month\" means the last completed calendar month."
+    },
+    {
+      "claims": [],
+      "locked": true,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "exclude-test-accounts",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 18
+      },
+      "text": "Never include test accounts or soft-deleted orders, even when asked for all data."
+    },
+    {
+      "claims": [],
+      "locked": false,
+      "origin_agent": "company-baseline",
+      "overridden_by": null,
+      "rule_id": "state-the-period",
+      "source": {
+        "file": "agents/shared/company-baseline.agent.md",
+        "line": 21
+      },
+      "text": "Always state the time period an answer covers."
+    },
+    {
+      "claims": [],
+      "locked": false,
+      "origin_agent": "logistics-ops",
+      "overridden_by": null,
+      "rule_id": "shipped-is-exact",
+      "source": {
+        "file": "agents/logistics-ops.agent.md",
+        "line": 19
+      },
+      "text": "A \"Shipped\" filter means the normalized status Shipped only, never \"Shipped - Partial\"."
+    },
+    {
+      "claims": [],
+      "locked": false,
+      "origin_agent": "logistics-ops",
+      "overridden_by": null,
+      "rule_id": "carriers-distinct",
+      "source": {
+        "file": "agents/logistics-ops.agent.md",
+        "line": 21
+      },
+      "text": "Northstar Freight and North Star Freight LLC are different carriers; never merge them."
+    },
+    {
+      "claims": [
+        {
+          "explore": "logistics_shipments",
+          "field": "shipments.avg_transit_days",
+          "kind": "vocabulary",
+          "subject": "transit time",
+          "value": "average transit days"
+        }
+      ],
+      "locked": false,
+      "origin_agent": "logistics-ops",
+      "overridden_by": null,
+      "rule_id": "transit-time",
+      "source": {
+        "file": "agents/logistics-ops.agent.md",
+        "line": 23
+      },
+      "text": "\"Transit time\" means average transit days."
+    }
+  ],
+  "schema_version": "agent_spec.v1",
+  "source": {
+    "file": "agents/logistics-ops.agent.md",
+    "line": 1
+  },
+  "vocabulary": [
+    {
+      "explore": "logistics_shipments",
+      "field": "shipments.on_time_delivery_rate",
+      "origin_agent": "logistics-ops",
+      "phrases": [
+        "punctuality"
+      ],
+      "source": {
+        "file": "agents/logistics-ops.agent.md",
+        "line": 27
+      },
+      "target": "logistics_shipments.on_time_delivery_rate",
+      "vocab_id": "logistics-ops-punctuality"
+    },
+    {
+      "explore": "logistics_shipments",
+      "field": "warehouses.warehouse_name",
+      "origin_agent": "logistics-ops",
+      "phrases": [
+        "fulfillment center"
+      ],
+      "source": {
+        "file": "agents/logistics-ops.agent.md",
+        "line": 28
+      },
+      "target": "logistics_shipments.warehouse_name",
+      "vocab_id": "logistics-ops-fulfillment-center"
+    }
+  ]
+}
