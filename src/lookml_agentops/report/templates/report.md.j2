@@ -1,0 +1,81 @@
+## lkagent verify — {{ d.head.run_id }}
+
+`{{ d.head.runner_version }}` · mode `{{ d.head.mode }}` · as_of {{ d.head.as_of }}{% if d.head.label %} · {{ d.head.label }}{% endif %}
+
+
+{% if d.result_only %}
+> ⚠️ This runner can't expose the explore, fields, or filters behind its answers. Tests were compared on **results only**, and structural checks were skipped.
+
+{% endif %}
+| Spoke | Pass rate | Golden | Adherence | ✅ pass | 🟡 degraded | 🔴 fail | ⚠️ error |
+|---|---:|---:|---:|---:|---:|---:|---:|
+{% for s in d.spokes %}
+| {{ s.spoke }} | **{{ "%.1f"|format(s.rate) }}%** | {{ "%.1f"|format(s.golden_rate) }}% | {{ "%.1f"|format(s.adherence_rate) }}% | {{ s.passed }} | {{ s.degraded }} | {{ s.failed }} | {{ s.errors }} |
+{% endfor %}
+{% if d.attribution %}
+
+### Attribution vs {{ d.attribution.base_run }}
+
+{% for line in d.headline %}
+- {{ line }}
+{% endfor %}
+{% if d.attribution.changes %}
+
+| Cause | Test | Before → After | What changed |
+|---|---|---|---|
+{% for c in d.attribution.changes[:max_rows] %}
+| **{{ c.cause }}** | `{{ c.spoke }}/{{ c.test_id }}` | {{ c.before }} → {{ c.after }} | {{ (c.changed or c.evidence)|join(", ") }} |
+{% endfor %}
+{% if d.attribution.changes|length > max_rows %}
+| | … {{ d.attribution.changes|length - max_rows }} more | | |
+{% endif %}
+{% endif %}
+{% endif %}
+{% if d.degraded %}
+
+### 🟡 Degraded: right result, wrong structure (these will fail later)
+
+{% for r in d.degraded[:max_rows] %}
+- `{{ r.spoke }}/{{ r.test_id }}`: {{ r.details|join("; ") }}
+{% endfor %}
+{% endif %}
+{% set broken = d.rules|rejectattr("honored")|list %}
+
+### Instruction adherence
+
+{{ d.rules|length - broken|length }} of {{ d.rules|length }} compiled rules honored.
+{% if broken %}
+
+| Rule | Spoke | Kind | Passing tests |
+|---|---|---|---:|
+{% for r in broken[:max_rows] %}
+| `{{ r.rule_id }}` | {{ r.spoke }} | {{ r.kind }} | {{ r.passing }}/{{ r.tests }} |
+{% endfor %}
+{% endif %}
+{% if d.failing %}
+
+<details><summary>🔴 {{ d.failing|length }} failing test(s)</summary>
+
+{% for r in d.failing %}
+- `{{ r.spoke }}/{{ r.test_id }}`: {{ r.details|join("; ") }}
+{% endfor %}
+
+</details>
+{% endif %}
+{% if d.trend|length > 1 %}
+
+<details><summary>Trend (last {{ d.trend|length }} runs)</summary>
+
+| Run | Runner |{% for s in d.spokes %} {{ s.spoke }} |{% endfor %}
+
+|---|---|{% for s in d.spokes %}---:|{% endfor %}
+
+{% for p in d.trend %}
+| {{ p.run_id }}{% if p.label %} ({{ p.label }}){% endif %} | `{{ p.runner }}` |{% for s in d.spokes %} {{ "%.1f"|format(p.rates.get(s.spoke, 0)) }}% |{% endfor %}
+
+{% endfor %}
+
+</details>
+{% endif %}
+
+<sub>lkagent {{ version }} · reports contain summaries and query structure only, never row-level data.</sub>

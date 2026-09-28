@@ -246,5 +246,93 @@ def verify(
         raise typer.Exit(1)
 
 
+@app.command(name="attribute")
+def attribute_cmd(
+    base: Annotated[str | None, typer.Argument(help="Base run id (default: previous run)")] = None,
+    head: Annotated[str | None, typer.Argument(help="Head run id (default: latest run)")] = None,
+    config: ConfigOpt = None,
+    fmt: Annotated[str, typer.Option("--format", "-f", help="text | json")] = "text",
+) -> None:
+    """Classify each changed test between two runs as vendor / hub / spoke / unknown."""
+    from lookml_agentops._util.hashing import canonical_json
+    from lookml_agentops.attribute.attribute import attribute, render_text
+    from lookml_agentops.verify.history import History
+
+    cfg = _cfg(config)
+    with History(cfg.path(cfg.verify.history)) as h:
+        ids = h.run_ids()
+        if len(ids) < 2 and not (base and head):
+            typer.echo("need at least two recorded runs (lkagent verify)", err=True)
+            raise typer.Exit(2)
+        head_id = head or ids[-1]
+        base_id = base or ids[ids.index(head_id) - 1]
+        att = attribute(h.load(base_id), h.load(head_id))
+    if fmt == "json":
+        typer.echo(canonical_json(att.model_dump(mode="json")), nl=False)
+    else:
+        typer.echo(render_text(att), nl=False)
+
+
+@app.command()
+def report(
+    config: ConfigOpt = None,
+    run: Annotated[str | None, typer.Option(help="Run to report on (default: latest)")] = None,
+    base: Annotated[
+        str | None, typer.Option(help="Attribution base (default: previous run)")
+    ] = None,
+    trend: Annotated[int, typer.Option(help="Number of runs in the trend")] = 10,
+    out_dir: Annotated[
+        Path | None, typer.Option(help="Output directory (default: reports/)")
+    ] = None,
+) -> None:
+    """Write report.md (PR-comment sized) and a self-contained report.html."""
+    from lookml_agentops.report.build import write_reports
+    from lookml_agentops.report.data import build_report_data
+    from lookml_agentops.verify.history import History
+
+    cfg = _cfg(config)
+    with History(cfg.path(cfg.verify.history)) as h:
+        try:
+            data = build_report_data(h, head=run, base=base, trend=trend)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(2) from exc
+    for p in write_reports(data, out_dir or cfg.path("reports")):
+        typer.echo(f"wrote {p}")
+
+
+@app.command()
+def demo(
+    workdir: Annotated[Path, typer.Option(help="Scratch directory (recreated)")] = Path(
+        "lkagent-demo"
+    ),
+    source: Annotated[
+        Path | None,
+        typer.Option(help="Example project to copy (default: bundled Harborline example)"),
+    ] = None,
+) -> None:
+    """Offline drift demo: vendor, hub and spoke changes, attributed and reported."""
+    from lookml_agentops.demo import run_demo
+
+    src = source or _find_example()
+    res = run_demo(src, workdir.resolve(), log=typer.echo)
+    for name, paths in res.reports.items():
+        typer.echo(f"{name} report: {paths[1]}")
+    if not res.ok:
+        for p in res.problems:
+            typer.echo(f"demo check failed: {p}", err=True)
+        raise typer.Exit(1)
+    typer.echo("demo OK: vendor, hub and spoke changes were attributed correctly")
+
+
+def _find_example() -> Path:
+    for d in (Path.cwd(), *Path.cwd().parents):
+        cand = d / "examples" / "harborline" / "lkagent.yaml"
+        if cand.exists():
+            return cand.parent
+    typer.echo("could not find examples/harborline; pass --source", err=True)
+    raise typer.Exit(2)
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

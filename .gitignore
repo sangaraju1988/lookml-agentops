@@ -14,3 +14,4 @@ examples/harborline/seed/data/
 *.duckdb.wal
 reports/
 .DS_Store
+lkagent-demo/
