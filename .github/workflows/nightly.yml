@@ -1,0 +1,81 @@
+# Nightly: verify every spoke, attribute changes against the previous night, publish a report.
+# Uses the Conversational Analytics runner when credentials are configured, otherwise the mock.
+name: nightly
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write   # only used for optional Workload Identity Federation
+env:
+  LKAGENT_CONFIG: examples/harborline
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --all-extras
+
+      - name: Restore run history
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.LKAGENT_CONFIG }}/.lkagent
+          key: lkagent-history-${{ github.run_id }}
+          restore-keys: lkagent-history-
+
+      - name: Authenticate to Google Cloud (optional)
+        id: gcp
+        if: vars.GCP_WORKLOAD_IDENTITY_PROVIDER != ''
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Choose runner
+        id: runner
+        env:
+          GCP_TOKEN: ${{ steps.gcp.outputs.access_token }}
+          LOOKER_CLIENT_ID: ${{ secrets.LOOKER_CLIENT_ID }}
+        run: |
+          if [ -n "$GCP_TOKEN" ] && [ -n "$LOOKER_CLIENT_ID" ]; then
+            echo "runner=ca" >> "$GITHUB_OUTPUT"
+          else
+            echo "runner=mock" >> "$GITHUB_OUTPUT"
+            echo "No CA credentials configured; using the MockRunner."
+          fi
+
+      - name: Seed synthetic warehouse (ground truth for the demo project)
+        run: uv run lkagent seed -c "$LKAGENT_CONFIG"
+
+      - name: Verify
+        env:
+          LKAGENT_CA_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
+          GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
+          LOOKER_CLIENT_ID: ${{ secrets.LOOKER_CLIENT_ID }}
+          LOOKER_CLIENT_SECRET: ${{ secrets.LOOKER_CLIENT_SECRET }}
+        run: |
+          uv run lkagent verify -c "$LKAGENT_CONFIG" --nightly \
+            --runner "${{ steps.runner.outputs.runner }}" --label "nightly ${{ github.run_number }}" \
+            --fail-on never
+
+      - name: Attribute and report
+        run: |
+          uv run lkagent attribute -c "$LKAGENT_CONFIG" || echo "first recorded run; nothing to attribute"
+          uv run lkagent report -c "$LKAGENT_CONFIG" --out-dir reports
+          cat reports/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save run history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.LKAGENT_CONFIG }}/.lkagent
+          key: lkagent-history-${{ github.run_id }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lkagent-nightly-report
+          path: reports/

@@ -20,7 +20,7 @@ from lookml_agentops.verify.loader import LoadedTest, load_golden, wrap_generate
 from lookml_agentops.verify.runners.base import Runner, SpokeContext
 
 
-def make_runner(name: str, profile: str) -> Runner:
+def make_runner(name: str, profile: str, cfg: LkagentConfig) -> Runner:
     if name == "mock":
         from lookml_agentops.verify.runners.mock import MockRunner
 
@@ -28,11 +28,11 @@ def make_runner(name: str, profile: str) -> Runner:
     if name == "ca":
         from lookml_agentops.verify.runners.ca import CARunner
 
-        return CARunner.from_env()
+        return CARunner.from_config(cfg)
     if name == "mcp":
         from lookml_agentops.verify.runners.mcp import MCPRunner
 
-        return MCPRunner.from_env()
+        return MCPRunner.from_config(cfg)
     raise ValueError(f"unknown runner {name!r}")
 
 
@@ -84,7 +84,7 @@ def run_verify(
 ) -> RunRecord:
     """Run golden + adherence tests. ``golden_cfg`` supplies golden files/seed (defaults to cfg)."""
     gcfg = golden_cfg or cfg
-    runner = make_runner(opts.runner, opts.profile)
+    runner = make_runner(opts.runner, opts.profile, cfg)
     spokes = opts.spokes or cfg.spokes
     agents: dict[str, CompiledAgent] = compile_agents(cfg)
     golden = load_golden(gcfg)

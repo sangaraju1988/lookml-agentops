@@ -9,12 +9,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --python ${{ matrix.python }}
+      - run: uv sync --all-extras --python ${{ matrix.python }}
       - run: uv run ruff check . && uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest --cov=lookml_agentops --cov-report=term
+      - name: Offline drift demo
+        run: uv run lkagent demo --workdir "$RUNNER_TEMP/lkagent-demo"

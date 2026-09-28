@@ -34,7 +34,11 @@ _Last reviewed: 2026-09-27._
 | Which context to populate on create (staging vs published) | ⚠️ TODO(verify-api) | — |
 | `systemInstruction` recommended structure and size limits | ⚠️ TODO(verify-api) | — |
 | Up to five explores per Looker data agent | ✅ stated in the overview. The exporter warns. | conversational-analytics-overview |
-| Chat response exposes the generated Looker query (explore/fields/filters) | ⚠️ TODO(verify-api). CARunner degrades to result-only unless confirmed. | — |
+| `POST .../locations/*:chat` with `messages[{userMessage{text}}]` and `dataAgentContext{dataAgent, contextVersion}`. The response is a stream (JSON array) of `Message`. | ✅ confirmed | REST reference `projects.locations/chat`, `Message` |
+| `systemMessage.{text{parts,textType}, data{query, generatedSql, result{schema, data}}, error{text}}` | ✅ confirmed | same |
+| Where the generated Looker query lives in a data message (`data.generatedLookerQuery` vs `data.query.looker`) | ⚠️ TODO(verify-api): the reference pages disagree. CARunner accepts both and falls back to result-only when neither is present. | same |
+| Placement of Looker OAuth credentials in the chat request | ⚠️ TODO(verify-api): we send top-level `credentials.oauth.secret{clientId, clientSecret}` | chat reference summary |
+| A model/version identifier in responses (needed for positive vendor attribution) | ⚠️ not found. Vendor attribution works by elimination. | — |
 | Resolved filter values exposed in the response | ⚠️ TODO(verify-api), assumed **no** | — |
 | Auth for Looker datasources (credentials in request, OAuth, IAM roles) | ⚠️ TODO(verify-api) | authentication page not yet reviewed |
 
@@ -44,7 +48,8 @@ _Last reviewed: 2026-09-27._
 |---|---|---|
 | Endpoint `<LOOKER_INSTANCE_URL>/mcp`, HTTP transport | ✅ confirmed | docs.cloud.google.com/looker/docs/mcp |
 | Auth: OAuth 2.1 with PKCE. Admins enable individual tools. | ✅ confirmed | same |
-| Tool names and input schemas | ⚠️ TODO(verify-api): not listed on that page. The MCPRunner discovers tools at runtime via `tools/list` and requires them to be configured by name. | — |
+| Tool names and input schemas | ⚠️ TODO(verify-api): not listed on that page. MCPRunner calls the tool named in `verify.mcp.tool` with `{question_arg: question}` plus configured args. | — |
+| Python MCP SDK 2.2: `streamable_http_client(url, http_client=httpx2.AsyncClient)` yields `(read, write)`; `ClientSession.call_tool(name, arguments)` → `CallToolResult{content, structured_content, is_error}` | ✅ verified against the installed SDK | `mcp` 2.2.0 |
 
 ## MCP Toolbox for Databases (Looker source)
 

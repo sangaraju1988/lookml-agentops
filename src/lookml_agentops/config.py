@@ -50,10 +50,32 @@ class CompileConfig(_Strict):
     out_dir: str = "build"
 
 
+class CARunnerConfig(_Strict):
+    """Non-secret CA settings. Secrets come from env vars only (see docs/own-looker.md)."""
+
+    endpoint: str = "https://geminidataanalytics.googleapis.com/v1"
+    location: str = "global"
+    context_version: Literal["STAGING", "PUBLISHED"] = "PUBLISHED"
+    agents: dict[str, str] = Field(default_factory=dict)  # spoke -> data agent id or resource name
+    timeout_seconds: float = 120.0
+
+
+class MCPRunnerConfig(_Strict):
+    """Non-secret MCP settings. URL and bearer token come from env vars."""
+
+    tool: str = ""  # TODO(verify-api): tool name exposed by your MCP server
+    question_arg: str = "question"
+    extra_args: dict[str, str] = Field(default_factory=dict)
+    spoke_args: dict[str, dict[str, str]] = Field(default_factory=dict)
+    timeout_seconds: float = 120.0
+
+
 class VerifyConfig(_Strict):
     runner: Literal["mock", "ca", "mcp"] = "mock"
     vendor_profile: str = "v1"
     history: str = ".lkagent/history.duckdb"
+    ca: CARunnerConfig = Field(default_factory=CARunnerConfig)
+    mcp: MCPRunnerConfig = Field(default_factory=MCPRunnerConfig)
 
 
 class LkagentConfig(_Strict):

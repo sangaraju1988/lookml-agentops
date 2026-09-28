@@ -204,6 +204,7 @@ def verify(
     """Run golden + adherence tests through a runner and record the run."""
     from lookml_agentops.verify.modes import ModeError, project_at_branch
     from lookml_agentops.verify.run import VerifyOptions, run_verify
+    from lookml_agentops.verify.runners.ca import RunnerConfigError
     from lookml_agentops.verify.summary import render_summary
 
     cfg = _cfg(config)
@@ -237,8 +238,8 @@ def verify(
                 rec = run_verify(pr_cfg, opts, golden_cfg=cfg, log=log)
         else:
             rec = run_verify(cfg, opts, log=log)
-    except ModeError as exc:
-        typer.echo(str(exc), err=True)
+    except (ModeError, RunnerConfigError, ValueError) as exc:
+        typer.echo(f"verify: {exc}", err=True)
         raise typer.Exit(2) from exc
     typer.echo(render_summary(rec), nl=False)
     bad = {"fail", "error"} | ({"degraded"} if fail_on == "degraded" else set())

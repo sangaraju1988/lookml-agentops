@@ -156,6 +156,11 @@ def compare(
                         res.details.append(
                             f"filter {fe.field} resolved to {g.values}, expected {fe.values}"
                         )
+                elif g.start is None and g.end is None and not g.values:
+                    # runner exposes only the raw expression (e.g. "last quarter"), not the window
+                    res.details.append(
+                        f"filter {fe.field} window not exposed by runner ({g.raw!r}); not checked"
+                    )
                 else:
                     win = expected_window(fe, as_of)
                     if win is None or (g.start, g.end) != win:

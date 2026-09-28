@@ -1,0 +1,80 @@
+# Agent-integrity gate for pull requests that touch LookML, the glossary or golden tests.
+# lint -> compile --check -> verify (MockRunner) -> PR comment + SARIF upload.
+name: pr
+on:
+  pull_request:
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+concurrency:
+  group: lkagent-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+env:
+  LKAGENT_CONFIG: examples/harborline
+jobs:
+  agentops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Lint
+        id: lint
+        run: |
+          set +e
+          uv run lkagent lint -c "$LKAGENT_CONFIG" -f sarif -o lkagent.sarif
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          uv run lkagent lint -c "$LKAGENT_CONFIG" -f markdown -o lint.md
+          exit 0
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('lkagent.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: lkagent.sarif
+          category: lkagent
+
+      - name: Compile (fail if committed build/ is stale)
+        id: compile
+        run: uv run lkagent compile -c "$LKAGENT_CONFIG" --check
+
+      - name: Seed synthetic warehouse
+        run: uv run lkagent seed -c "$LKAGENT_CONFIG"
+
+      - name: Verify with MockRunner
+        id: verify
+        run: |
+          set +e
+          uv run lkagent verify -c "$LKAGENT_CONFIG" --label "PR #${{ github.event.pull_request.number }}"
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build report
+        if: always()
+        run: |
+          mkdir -p reports
+          uv run lkagent report -c "$LKAGENT_CONFIG" --out-dir reports || echo "_no verify run recorded_" > reports/report.md
+          if [ -f lint.md ]; then printf '\n' >> reports/report.md; cat lint.md >> reports/report.md; fi
+
+      - name: Comment on PR
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR" --body-file reports/report.md --edit-last \
+            || gh pr comment "$PR" --body-file reports/report.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lkagent-report
+          path: reports/
+
+      - name: Gate
+        if: always()
+        run: |
+          [ "${{ steps.lint.outputs.code }}" = "0" ] || { echo "::error::lkagent lint found errors"; exit 1; }
+          [ "${{ steps.verify.outputs.code }}" = "0" ] || { echo "::error::lkagent verify found failing tests"; exit 1; }
