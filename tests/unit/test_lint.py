@@ -14,7 +14,7 @@ from lookml_agentops.lint.reporters.markdown import render_markdown
 from lookml_agentops.lint.reporters.sarif import render_sarif
 from lookml_agentops.lint.rules import ALL_RULES
 
-BROKEN = FIXTURES / "broken_hub"
+BROKEN = FIXTURES / "broken_projects"
 
 
 def _snapshot(result) -> str:  # type: ignore[no-untyped-def]
@@ -87,7 +87,7 @@ def test_sarif_shape() -> None:
         for res in run["results"]
         for loc in res.get("locations", [])
     }
-    assert "tests/fixtures/broken_hub/lookml/core_hub/views/customers.view.lkml" in uris
+    assert "tests/fixtures/broken_projects/lookml/core_project/views/customers.view.lkml" in uris
     assert all((REPO / u).exists() for u in uris)
 
 
@@ -103,9 +103,9 @@ def test_rules_doc_is_current() -> None:
 
 def test_cli_exit_codes(tmp_path: Path) -> None:
     runner = CliRunner()
-    assert runner.invoke(app, ["lint", "-c", str(EXAMPLE)]).exit_code == 0
+    assert runner.invoke(app, ["generate", "lint", "-c", str(EXAMPLE)]).exit_code == 0
     res = runner.invoke(
-        app, ["lint", "-c", str(BROKEN), "-f", "sarif", "-o", str(tmp_path / "x.sarif")]
+        app, ["generate", "lint", "-c", str(BROKEN), "-f", "sarif", "-o", str(tmp_path / "x.sarif")]
     )
     assert res.exit_code == 1
     json.loads((tmp_path / "x.sarif").read_text())

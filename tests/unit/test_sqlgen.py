@@ -16,7 +16,7 @@ from lookml_agentops.lookml.sqlgen import QueryFilter, SqlGenError, build_query
 @pytest.fixture(scope="module")
 def fin():  # type: ignore[no-untyped-def]
     cfg = load_config(EXAMPLE)
-    return resolve_project(load_workspace(cfg), "finance_spoke")
+    return resolve_project(load_workspace(cfg), "finance_project")
 
 
 def test_guard_and_joins_are_applied(fin) -> None:  # type: ignore[no-untyped-def]
@@ -62,7 +62,7 @@ def test_fanout_is_refused(tmp_path: Path) -> None:
             ),
         },
     )
-    em = resolve_project(load_workspace(mini_config(tmp_path, {"p": "hub"})), "p")
+    em = resolve_project(load_workspace(mini_config(tmp_path, ["p"])), "p")
     with pytest.raises(SqlGenError, match="symmetric aggregates"):
         build_query(em, "a", ["b.total"], [])
 

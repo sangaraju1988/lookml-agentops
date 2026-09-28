@@ -1,6 +1,6 @@
 {
   "as_of": "2026-01-20",
-  "content_hash": "b4db091da9bdd9c1c22fbf0e1cfc0425e63c10ba35aafd32cbd73065aafba354",
+  "content_hash": "bab754a7633b0e95102d901d27dd59ab6d7fbc838c9fb65c3e6d244d47600afa",
   "scale": 1.0,
   "seed": 20260120,
   "tables": {
@@ -10,7 +10,7 @@
     },
     "customers": {
       "rows": 5000,
-      "sha256": "672b2f62da894034dae84455475500511e14571636379744c8773bc5fe7606e2"
+      "sha256": "443f28bd520375bdadd2990bc8628d40aa2b0ba2f71101d0d4d182f416d48f2b"
     },
     "fiscal_calendar": {
       "rows": 1461,
@@ -40,6 +40,10 @@
       "rows": 200,
       "sha256": "e320c130efb8a2449e5c219dd5619d4be443b059d0c137b10633e86b4e88c36f"
     },
+    "purchase_orders": {
+      "rows": 3000,
+      "sha256": "55c9c1fc5d8eddc2379c7872ee04690543f098ebb8799b571b61eee4a1d601ea"
+    },
     "refunds": {
       "rows": 2888,
       "sha256": "d84f912757d19fdd152c332e9a5bf88fa0edea1de3f34aeec704810edd47b1a0"
@@ -55,6 +59,10 @@
     "shipments": {
       "rows": 59684,
       "sha256": "4af826f317795934f4d8042a2facea7f009f779e809002bf22e1baeb566ae553"
+    },
+    "suppliers": {
+      "rows": 40,
+      "sha256": "134b1caeafc969f824111a211d576e582b371d338ff2c1432cc74ecf33173d66"
     },
     "warehouses": {
       "rows": 5,

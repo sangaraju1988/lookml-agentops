@@ -13,11 +13,12 @@ def write_projects(root: Path, files: dict[str, str]) -> None:
         p.write_text(text, encoding="utf-8")
 
 
-def mini_config(root: Path, projects: dict[str, str]) -> LkagentConfig:
+def mini_config(root: Path, projects: list[str]) -> LkagentConfig:
     cfg = LkagentConfig(
         name="mini",
         as_of=dt.date(2026, 1, 20),
-        projects={n: ProjectConfig(path=n, role=r) for n, r in projects.items()},  # type: ignore[arg-type]
+        projects={n: ProjectConfig(path=n) for n in projects},
+        owners=None,
     )
     cfg.root = root
     return cfg

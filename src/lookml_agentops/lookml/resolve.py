@@ -69,8 +69,39 @@ def load_project(name: str, root: Path) -> Project:
     return Project(name=name, root=root, files=files)
 
 
+def import_graph(ws: Workspace) -> dict[str, list[str]]:
+    """project -> projects it imports (from manifest.lkml), for any topology."""
+    return {name: p.dependencies for name, p in sorted(ws.projects.items())}
+
+
+def check_import_cycles(ws: Workspace) -> None:
+    graph = import_graph(ws)
+    state: dict[str, int] = {}  # 0 = visiting, 1 = done
+
+    def visit(node: str, path: list[str]) -> None:
+        if state.get(node) == 1:
+            return
+        if state.get(node) == 0:
+            cycle = [*path[path.index(node) :], node]
+            raise ResolveError(
+                "import cycle between LookML projects: "
+                + " -> ".join(cycle)
+                + ". Break the cycle by moving shared objects into a project both can import."
+            )
+        state[node] = 0
+        for dep in graph.get(node, []):
+            if dep in graph:
+                visit(dep, [*path, node])
+        state[node] = 1
+
+    for n in graph:
+        visit(n, [])
+
+
 def load_workspace(cfg: LkagentConfig) -> Workspace:
-    return Workspace({n: load_project(n, cfg.project_path(n)) for n in sorted(cfg.projects)})
+    ws = Workspace({n: load_project(n, cfg.project_path(n)) for n in sorted(cfg.projects)})
+    check_import_cycles(ws)
+    return ws
 
 
 def _glob_regex(pattern: str) -> re.Pattern[str]:

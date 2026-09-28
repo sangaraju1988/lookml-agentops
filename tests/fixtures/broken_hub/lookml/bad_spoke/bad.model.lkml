@@ -1,5 +1,0 @@
-connection: "harborline_warehouse"
-include: "//core_hub/views/*.view.lkml"
-include: "//core_hub/explores/*.explore.lkml"
-include: "/*.view.lkml"
-include: "/*.explore.lkml"

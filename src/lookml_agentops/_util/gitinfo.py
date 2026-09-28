@@ -1,8 +1,9 @@
-"""Revision identity for Looker projects.
+"""Versions for tracked inputs.
 
-A project's *tree hash* (content hash of its files) is what attribution compares: in a monorepo
-the commit SHA changes for every change anywhere, so it cannot tell hub from spoke. The commit SHA
-is still recorded for traceability when the project lives in a git checkout.
+An input's version is the SHA of the last git commit that touched its path, plus a ``+dirty``
+content-hash suffix when the working tree differs. Outside git it is a content hash. Using the
+last commit *for that path* (not HEAD) keeps a project's version stable across unrelated commits
+in a monorepo.
 """
 
 from __future__ import annotations
@@ -10,35 +11,28 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from pydantic import BaseModel
-
-from lookml_agentops._util.hashing import tree_hash
+from lookml_agentops._util.hashing import sha256_file, tree_hash
 
 
-class ProjectRevision(BaseModel):
-    project: str
-    tree_hash: str
-    commit_sha: str | None = None
-
-
-def git_commit_sha(path: Path) -> str | None:
+def _git(args: list[str], cwd: Path) -> str | None:
     try:
         out = subprocess.run(
-            ["git", "-C", str(path), "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=True,
-            timeout=10,
+            ["git", *args], cwd=cwd, capture_output=True, text=True, check=True, timeout=15
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    sha = out.stdout.strip()
-    return sha or None
+    return out.stdout.strip()
 
 
-def project_revision(name: str, path: Path) -> ProjectRevision:
-    return ProjectRevision(
-        project=name,
-        tree_hash=tree_hash(path, suffixes=(".lkml", ".lookml", ".yaml", ".yml")),
-        commit_sha=git_commit_sha(path),
-    )
+def content_hash(path: Path) -> str:
+    return tree_hash(path) if path.is_dir() else sha256_file(path)
+
+
+def input_version(path: Path) -> str:
+    path = path.resolve()
+    cwd = path if path.is_dir() else path.parent
+    sha = _git(["log", "-1", "--format=%H", "--", str(path)], cwd)
+    if not sha:
+        return f"sha256:{content_hash(path)[:16]}"
+    dirty = _git(["status", "--porcelain", "--", str(path)], cwd)
+    return f"{sha}+dirty.{content_hash(path)[:12]}" if dirty else sha

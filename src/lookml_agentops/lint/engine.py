@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Literal
@@ -55,10 +56,6 @@ class LintContext:
     catalog: Catalog
     catalog_rel: str
 
-    @property
-    def hub(self) -> str:
-        return self.cfg.hub
-
     def catalog_loc(self, term_id: str) -> Loc:
         return Loc(CATALOG_PROJECT, self.catalog_rel, self.catalog.lines.get(term_id, 1))
 
@@ -89,12 +86,12 @@ class LintResult:
 
 def build_context(cfg: LkagentConfig) -> LintContext:
     ws = load_workspace(cfg)
-    models = {p: resolve_project(ws, p) for p in sorted(cfg.projects)}
+    models = {p: resolve_project(ws, p) for p in sorted(cfg.projects) if ws.projects[p].model_files}
     catalog = load_catalog(cfg)
-    try:
-        rel = cfg.path(cfg.catalog.path).resolve().relative_to(cfg.root).as_posix()
-    except ValueError:
-        rel = cfg.catalog.path
+    entry = cfg.catalog()
+    rel = entry[1].path if entry else ""
+    with contextlib.suppress(ValueError):
+        rel = cfg.path(rel).resolve().relative_to(cfg.root).as_posix() if rel else ""
     return LintContext(cfg=cfg, ws=ws, models=models, catalog=catalog, catalog_rel=rel)
 
 

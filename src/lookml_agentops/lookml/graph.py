@@ -41,7 +41,7 @@ def render_text(ws: Workspace) -> str:
                 walk(child, prefix + ("    " if last else "│   "), seen | {child})
 
     for r in roots:
-        lines.append(r)
+        lines.append(r if r in by_src else f"{r} (standalone: imports nothing)")
         walk(r, "", frozenset({r}))
     return "\n".join(lines) + "\n"
 

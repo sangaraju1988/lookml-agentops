@@ -1,0 +1,13 @@
+# Intentionally broken projects. Every lint rule must fire; see tests/unit/test_lint.py.
+version: 2
+name: broken
+as_of: 2026-01-20
+projects:
+  core_project: {path: lookml/core_project}
+  bad_project: {path: lookml/bad_project}
+catalogs:
+  glossary: {adapter: yaml, path: catalog/glossary.yaml}
+owners: null
+agents: {paths: []}
+lint:
+  max_ai_fields: 3

@@ -1,7 +1,8 @@
-# lookml-agentops project config for the Harborline Supply Co. demo.
-# Paths are relative to this file. In real deployments each Looker project is usually its own
-# git repo: point `projects.<name>.path` at separate checkouts.
-version: 1
+# lookml-agentops config (v2) for the Harborline Supply Co. demo.
+# Paths are relative to this file. Nothing here assumes a topology: projects may import zero or
+# many other projects. In real deployments each LookML project is usually its own git repo;
+# point `projects.<name>.path` at separate checkouts.
+version: 2
 name: harborline
 as_of: 2026-01-20          # pins relative dates ("last quarter") for deterministic answers
 
@@ -12,35 +13,32 @@ seed:
   duckdb: seed/harborline.duckdb
   manifest: seed/manifest.json
 
-projects:
-  core_hub:
-    path: lookml/core_hub
-    role: hub
-    owner: central data team
-  finance_spoke:
-    path: lookml/finance_spoke
-    role: spoke
-    owner: finance analytics
-  logistics_spoke:
-    path: lookml/logistics_spoke
-    role: spoke
-    owner: logistics analytics
+projects:                  # input ids: lookml:<name>
+  core_project: {path: projects/core_project}
+  finance_project: {path: projects/finance_project}          # imports core_project
+  logistics_project: {path: projects/logistics_project}      # imports core_project
+  procurement_project: {path: projects/procurement_project}  # standalone
 
-catalog:
-  adapter: yaml
-  path: catalog/glossary.yaml
+agents:                    # input ids: agent:<agent id from frontmatter>
+  paths: ["agents/**/*.agent.md"]
+
+catalogs:                  # input ids: catalog:<name>
+  glossary: {adapter: yaml, path: catalog/glossary.yaml}
+
+suites:                    # input ids: suite:<name>
+  finance: suites/finance.yaml
+  logistics: suites/logistics.yaml
+  procurement: suites/procurement.yaml
+
+owners: owners.yaml
 
 lint:
   max_ai_fields: 150
 
-compile:
+build:
   out_dir: build
 
-golden:
-  - golden/finance.yaml
-  - golden/logistics.yaml
-
-verify:
+diagnose:
   runner: mock
-  vendor_profile: v1
+  scenario: baseline
   history: .lkagent/history.duckdb

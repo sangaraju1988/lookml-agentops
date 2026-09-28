@@ -1,0 +1,35 @@
+# Who owns each tracked input. Most specific match wins; unmatched inputs are "unassigned".
+# match: "<input id glob>" or "<input id glob>/<path glob inside the input>"
+owners:
+  - match: "lookml:core_project/**"
+    team: central-data-platform
+  - match: "agent:company-baseline"
+    team: central-data-platform
+  - match: "catalog:*"
+    team: central-data-platform
+
+  - match: "lookml:finance_project/**"
+    team: finance-analytics
+  - match: "agent:finance-*"
+    team: finance-analytics
+  - match: "suite:finance"
+    team: finance-analytics
+
+  - match: "lookml:logistics_project/**"
+    team: logistics-analytics
+  - match: "agent:logistics-*"
+    team: logistics-analytics
+  - match: "suite:logistics"
+    team: logistics-analytics
+
+  - match: "lookml:procurement_project/**"
+    team: procurement-analytics
+  - match: "agent:procurement-*"
+    team: procurement-analytics
+  - match: "suite:procurement"
+    team: procurement-analytics
+
+  - match: "runner:*"          # external / vendor behaviour changes
+    team: bi-platform
+  - match: "data:*"            # ground-truth drift in the warehouse
+    team: data-engineering

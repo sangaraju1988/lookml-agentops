@@ -89,6 +89,20 @@ TABLES: dict[str, list[tuple[str, str]]] = {
         ("refund_amount", "DECIMAL(12,2)"),
         ("reason", "VARCHAR"),
     ],
+    "suppliers": [
+        ("supplier_id", "INTEGER"),
+        ("supplier_name", "VARCHAR"),
+        ("category_id", "INTEGER"),
+        ("is_preferred", "BOOLEAN"),
+    ],
+    "purchase_orders": [
+        ("po_id", "INTEGER"),
+        ("supplier_id", "INTEGER"),
+        ("warehouse_id", "INTEGER"),
+        ("ordered_at_utc", "TIMESTAMP"),
+        ("amount", "DECIMAL(12,2)"),
+        ("status", "VARCHAR"),
+    ],
     "fiscal_calendar": [
         ("calendar_date", "DATE"),
         ("fiscal_year", "INTEGER"),

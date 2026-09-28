@@ -1,0 +1,36 @@
+# Golden suite for the procurement-buyer agent (standalone procurement_project).
+# Ground truth: sql/*.sql on raw seed tables.
+version: 1
+tests:
+  - id: proc-001
+    question: "What was total spend last quarter?"
+    agent: procurement-buyer
+    expect:
+      explore: purchase_orders
+      fields_any_of: [[purchase_orders.total_spend]]
+      filters:
+        - {field: purchase_orders.ordered_date, period: last_completed_fiscal_quarter}
+      ground_truth_sql: sql/proc-001.sql
+      tolerance: {relative: 0.000001}
+    tags: [trap:fiscal-calendar]
+
+  - id: proc-002
+    question: "What was total spend by supplier last year?"
+    agent: procurement-buyer
+    expect:
+      explore: purchase_orders
+      fields_any_of: [[purchase_orders.total_spend, suppliers.supplier_name]]
+      filters:
+        - {field: purchase_orders.ordered_date, period: last_completed_fiscal_year}
+      ground_truth_sql: sql/proc-002.sql
+      tolerance: {relative: 0.000001}
+    tags: [trap:fiscal-calendar]
+
+  - id: proc-003
+    question: "How many purchase orders by fiscal quarter?"
+    agent: procurement-buyer
+    expect:
+      explore: purchase_orders
+      fields_any_of: [[purchase_orders.po_count, po_fiscal.fiscal_quarter_label]]
+      ground_truth_sql: sql/proc-003.sql
+    tags: [trap:fiscal-calendar]

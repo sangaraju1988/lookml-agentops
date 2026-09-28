@@ -1,4 +1,9 @@
-"""``lkagent.yaml`` project configuration."""
+"""``lkagent.yaml`` (version 2) project configuration.
+
+The config declares *inputs* — LookML projects, agent specs, catalogs, test suites — without any
+built-in topology. Projects may import zero or many other projects; the resolver handles any
+import DAG. Paths are relative to the config file.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from lookml_agentops._util.io import load_yaml
 
 CONFIG_FILENAME = "lkagent.yaml"
+CONFIG_VERSION = 2
 
 
 class _Strict(BaseModel):
@@ -27,8 +33,10 @@ class SeedConfig(_Strict):
 
 class ProjectConfig(_Strict):
     path: str
-    role: Literal["hub", "spoke"]
-    owner: str = ""
+
+
+class AgentsConfig(_Strict):
+    paths: list[str] = Field(default_factory=lambda: ["agents/**/*.agent.md"])
 
 
 class CatalogConfig(_Strict):
@@ -46,8 +54,15 @@ class LintConfig(_Strict):
     rules: dict[str, RuleOverride] = Field(default_factory=dict)
 
 
-class CompileConfig(_Strict):
+class BuildConfig(_Strict):
     out_dir: str = "build"
+
+
+class LookerConfig(_Strict):
+    """Looker API access for `generate resolve-golden`. Secrets come from env vars only."""
+
+    base_url_env: str = "LOOKER_BASE_URL"
+    api_version: str = "4.0"
 
 
 class CARunnerConfig(_Strict):
@@ -56,7 +71,9 @@ class CARunnerConfig(_Strict):
     endpoint: str = "https://geminidataanalytics.googleapis.com/v1"
     location: str = "global"
     context_version: Literal["STAGING", "PUBLISHED"] = "PUBLISHED"
-    agents: dict[str, str] = Field(default_factory=dict)  # spoke -> data agent id or resource name
+    agents: dict[str, str] = Field(
+        default_factory=dict
+    )  # agent id -> data agent id or resource name
     timeout_seconds: float = 120.0
 
 
@@ -66,32 +83,41 @@ class MCPRunnerConfig(_Strict):
     tool: str = ""  # TODO(verify-api): tool name exposed by your MCP server
     question_arg: str = "question"
     extra_args: dict[str, str] = Field(default_factory=dict)
-    spoke_args: dict[str, dict[str, str]] = Field(default_factory=dict)
+    agent_args: dict[str, dict[str, str]] = Field(default_factory=dict)
     timeout_seconds: float = 120.0
 
 
-class VerifyConfig(_Strict):
+class DeployConfig(_Strict):
+    pass_threshold: float = 1.0  # minimum pass rate against staging before publishing
+
+
+class DiagnoseConfig(_Strict):
     runner: Literal["mock", "ca", "mcp"] = "mock"
-    vendor_profile: str = "v1"
+    scenario: str = "baseline"
     history: str = ".lkagent/history.duckdb"
     ca: CARunnerConfig = Field(default_factory=CARunnerConfig)
     mcp: MCPRunnerConfig = Field(default_factory=MCPRunnerConfig)
+    deploy: DeployConfig = Field(default_factory=DeployConfig)
 
 
 class LkagentConfig(_Strict):
-    version: int = 1
+    version: Literal[2] = 2
     name: str
     as_of: dt.date
     seed: SeedConfig = Field(default_factory=SeedConfig)
-    projects: dict[str, ProjectConfig]
-    catalog: CatalogConfig = Field(default_factory=CatalogConfig)
+    projects: dict[str, ProjectConfig] = Field(default_factory=dict)
+    agents: AgentsConfig = Field(default_factory=AgentsConfig)
+    catalogs: dict[str, CatalogConfig] = Field(default_factory=dict)
+    suites: dict[str, str] = Field(default_factory=dict)  # suite name -> yaml path
+    owners: str | None = "owners.yaml"
     lint: LintConfig = Field(default_factory=LintConfig)
-    compile: CompileConfig = Field(default_factory=CompileConfig)
-    golden: list[str] = Field(default_factory=list)
-    verify: VerifyConfig = Field(default_factory=VerifyConfig)
+    build: BuildConfig = Field(default_factory=BuildConfig)
+    looker: LookerConfig = Field(default_factory=LookerConfig)
+    diagnose: DiagnoseConfig = Field(default_factory=DiagnoseConfig)
 
     # Set by :func:`load_config`; not part of the file.
     root: Path = Field(default=Path("."), exclude=True)
+    source: Path | None = Field(default=None, exclude=True)
 
     def path(self, rel: str) -> Path:
         p = Path(rel)
@@ -100,16 +126,16 @@ class LkagentConfig(_Strict):
     def project_path(self, name: str) -> Path:
         return self.path(self.projects[name].path)
 
-    @property
-    def hub(self) -> str:
-        hubs = sorted(n for n, p in self.projects.items() if p.role == "hub")
-        if len(hubs) != 1:
-            raise ValueError(f"expected exactly one hub project, found {hubs}")
-        return hubs[0]
+    def catalog(self) -> tuple[str, CatalogConfig] | None:
+        """The (single) glossary catalog used for lint/derive, if any."""
+        if not self.catalogs:
+            return None
+        name = sorted(self.catalogs)[0]
+        return name, self.catalogs[name]
 
-    @property
-    def spokes(self) -> list[str]:
-        return sorted(n for n, p in self.projects.items() if p.role == "spoke")
+
+class ConfigError(Exception):
+    pass
 
 
 def find_config(start: Path | None = None) -> Path:
@@ -126,6 +152,12 @@ def find_config(start: Path | None = None) -> Path:
 def load_config(path: Path | None = None) -> LkagentConfig:
     cfg_path = find_config(path)
     data = load_yaml(cfg_path) or {}
+    if data.get("version") != CONFIG_VERSION:
+        raise ConfigError(
+            f"{cfg_path}: expected `version: {CONFIG_VERSION}` (got {data.get('version')!r}). "
+            "See docs/generalization-plan.md for the v1 -> v2 changes."
+        )
     cfg = LkagentConfig.model_validate(data)
     cfg.root = cfg_path.parent.resolve()
+    cfg.source = cfg_path.resolve()
     return cfg

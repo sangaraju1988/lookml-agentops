@@ -52,10 +52,15 @@ class CatalogAdapter(abc.ABC):
 
 
 def load_catalog(cfg: LkagentConfig) -> Catalog:
-    if cfg.catalog.adapter == "yaml":
+    """The configured glossary catalog, or an empty catalog when none is configured."""
+    entry = cfg.catalog()
+    if entry is None:
+        return Catalog()
+    _, conf = entry
+    if conf.adapter == "yaml":
         from lookml_agentops.catalog.yaml_adapter import YamlCatalogAdapter
 
-        return YamlCatalogAdapter(cfg.path(cfg.catalog.path)).load()
+        return YamlCatalogAdapter(cfg.path(conf.path)).load()
     from lookml_agentops.catalog.dataplex_adapter import DataplexCatalogAdapter
 
     return DataplexCatalogAdapter().load()

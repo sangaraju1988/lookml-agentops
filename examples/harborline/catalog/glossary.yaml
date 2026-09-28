@@ -10,7 +10,7 @@ terms:
     synonyms: [revenue, sales, net sales, turnover]
     owner: finance
     sensitivity: internal
-    linked_fields: [core_hub.orders.net_revenue]
+    linked_fields: [core_project.orders.net_revenue]
     status: approved
 
   - id: gross_revenue
@@ -19,7 +19,7 @@ terms:
     synonyms: [gross sales, bookings]
     owner: finance
     sensitivity: internal
-    linked_fields: [core_hub.orders.gross_revenue]
+    linked_fields: [core_project.orders.gross_revenue]
     status: approved
 
   - id: recognized_revenue
@@ -29,7 +29,7 @@ terms:
     synonyms: [invoiced revenue, billed revenue]
     owner: finance
     sensitivity: internal
-    linked_fields: [core_hub.invoices.recognized_revenue]
+    linked_fields: [core_project.invoices.recognized_revenue]
     status: approved
 
   - id: order_count
@@ -38,7 +38,7 @@ terms:
     synonyms: [orders, number of orders, order volume]
     owner: central data team
     sensitivity: internal
-    linked_fields: [core_hub.orders.order_count]
+    linked_fields: [core_project.orders.order_count]
     status: approved
 
   - id: active_customer
@@ -47,7 +47,7 @@ terms:
     synonyms: [active customers, buying customers]
     owner: sales operations
     sensitivity: internal
-    linked_fields: [core_hub.orders.active_customer_count]
+    linked_fields: [core_project.orders.active_customer_count]
     status: approved
 
   - id: customer
@@ -56,7 +56,7 @@ terms:
     synonyms: [customer name, account]
     owner: sales operations
     sensitivity: internal
-    linked_fields: [core_hub.customers.company_name]
+    linked_fields: [core_project.customers.company_name]
     status: approved
 
   - id: customer_segment
@@ -65,7 +65,7 @@ terms:
     synonyms: [segment]
     owner: sales operations
     sensitivity: internal
-    linked_fields: [core_hub.customers.segment]
+    linked_fields: [core_project.customers.segment]
     status: approved
 
   - id: region
@@ -74,7 +74,7 @@ terms:
     synonyms: [sales region, territory]
     owner: sales operations
     sensitivity: internal
-    linked_fields: [core_hub.regions.region_name]
+    linked_fields: [core_project.regions.region_name]
     status: approved
 
   - id: fiscal_quarter
@@ -85,7 +85,7 @@ terms:
     synonyms: [quarter, fiscal qtr]
     owner: finance
     sensitivity: public
-    linked_fields: [core_hub.fiscal_calendar.fiscal_quarter_label]
+    linked_fields: [core_project.fiscal_calendar.fiscal_quarter_label]
     status: approved
 
   - id: fiscal_year
@@ -96,7 +96,7 @@ terms:
     synonyms: [fy]
     owner: finance
     sensitivity: public
-    linked_fields: [core_hub.fiscal_calendar.fiscal_year]
+    linked_fields: [core_project.fiscal_calendar.fiscal_year]
     status: approved
 
   - id: on_time_delivery
@@ -105,7 +105,7 @@ terms:
     synonyms: [on-time rate, otd, on time delivery rate]
     owner: logistics
     sensitivity: internal
-    linked_fields: [core_hub.shipments.on_time_delivery_rate]
+    linked_fields: [core_project.shipments.on_time_delivery_rate]
     status: approved
 
   - id: shipment_count
@@ -114,7 +114,7 @@ terms:
     synonyms: [shipments, number of shipments]
     owner: logistics
     sensitivity: internal
-    linked_fields: [core_hub.shipments.shipment_count]
+    linked_fields: [core_project.shipments.shipment_count]
     status: approved
 
   - id: shipment_status
@@ -124,7 +124,7 @@ terms:
     synonyms: [status]
     owner: logistics
     sensitivity: internal
-    linked_fields: [core_hub.shipments.status]
+    linked_fields: [core_project.shipments.status]
     status: approved
 
   - id: carrier
@@ -135,7 +135,7 @@ terms:
     synonyms: [shipping carrier, freight carrier]
     owner: logistics
     sensitivity: internal
-    linked_fields: [core_hub.carriers.carrier_name]
+    linked_fields: [core_project.carriers.carrier_name]
     status: approved
 
   - id: warehouse
@@ -144,7 +144,7 @@ terms:
     synonyms: [distribution center, dc]
     owner: logistics
     sensitivity: internal
-    linked_fields: [core_hub.warehouses.warehouse_name]
+    linked_fields: [core_project.warehouses.warehouse_name]
     status: approved
 
   - id: refund_rate
@@ -153,7 +153,7 @@ terms:
     synonyms: [refund percentage]
     owner: finance
     sensitivity: internal
-    linked_fields: [finance_spoke.orders.refund_rate]
+    linked_fields: [finance_project.orders.refund_rate]
     status: approved
 
   - id: days_sales_outstanding
@@ -162,7 +162,7 @@ terms:
     synonyms: [dso, days to pay]
     owner: finance
     sensitivity: internal
-    linked_fields: [finance_spoke.payments.days_sales_outstanding]
+    linked_fields: [finance_project.payments.days_sales_outstanding]
     status: approved
 
   - id: transit_time
@@ -171,7 +171,7 @@ terms:
     synonyms: [transit days, average transit time, delivery time]
     owner: logistics
     sensitivity: internal
-    linked_fields: [logistics_spoke.shipments.avg_transit_days]
+    linked_fields: [logistics_project.shipments.avg_transit_days]
     status: approved
 
   - id: customer_lifetime_value
@@ -182,3 +182,39 @@ terms:
     sensitivity: internal
     linked_fields: []
     status: draft
+
+  - id: po_count
+    name: PO Count
+    definition: Number of purchase orders placed with suppliers.
+    synonyms: [purchase orders, number of purchase orders]
+    owner: procurement
+    sensitivity: internal
+    linked_fields: [procurement_project.purchase_orders.po_count]
+    status: approved
+
+  - id: spend
+    name: Spend
+    definition: Purchase order amounts placed with suppliers, excluding cancelled orders.
+    synonyms: [total spend, procurement spend]
+    owner: procurement
+    sensitivity: internal
+    linked_fields: [procurement_project.purchase_orders.total_spend]
+    status: approved
+
+  - id: supplier
+    name: Supplier
+    definition: A company Harborline buys from.
+    synonyms: [vendor company]
+    owner: procurement
+    sensitivity: internal
+    linked_fields: [procurement_project.suppliers.supplier_name]
+    status: approved
+
+  - id: po_status
+    name: PO Status
+    definition: Lifecycle state of a purchase order (received, open, cancelled).
+    synonyms: [purchase order status]
+    owner: procurement
+    sensitivity: internal
+    linked_fields: [procurement_project.purchase_orders.status]
+    status: approved

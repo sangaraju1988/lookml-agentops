@@ -1,4 +1,10 @@
-"""``lkagent`` command-line interface."""
+"""``lkagent`` command-line interface.
+
+Two modes:
+
+* ``lkagent generate …`` — author, validate, compile and deploy agent instructions;
+* ``lkagent diagnose …`` — "the AI agent's answer changed: why, and whose problem is it?"
+"""
 
 from __future__ import annotations
 
@@ -8,14 +14,22 @@ from typing import Annotated
 import typer
 
 from lookml_agentops import __version__
-from lookml_agentops.config import LkagentConfig, load_config
+from lookml_agentops.config import ConfigError, LkagentConfig, load_config
 
 app = typer.Typer(
     name="lkagent",
-    help="Lint, compile, verify and attribute Looker AI-agent instructions as code.",
+    help="Author and diagnose Looker AI agents as code.",
     no_args_is_help=True,
     add_completion=False,
 )
+generate_app = typer.Typer(
+    help="Author, validate, compile and deploy agent instructions.", no_args_is_help=True
+)
+diagnose_app = typer.Typer(
+    help="The agent's answer changed: why, and whose problem is it?", no_args_is_help=True
+)
+app.add_typer(generate_app, name="generate")
+app.add_typer(diagnose_app, name="diagnose")
 
 ConfigOpt = Annotated[
     Path | None,
@@ -26,7 +40,7 @@ ConfigOpt = Annotated[
 def _cfg(config: Path | None) -> LkagentConfig:
     try:
         return load_config(config)
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ConfigError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(2) from exc
 
@@ -65,11 +79,11 @@ def seed(
 def graph(
     config: ConfigOpt = None,
     fmt: Annotated[str, typer.Option("--format", "-f", help="text | mermaid | json")] = "text",
-    spoke: Annotated[
+    project: Annotated[
         str | None, typer.Option(help="Also print the effective model of this project")
     ] = None,
 ) -> None:
-    """Print the project import graph and (optionally) a project's effective model."""
+    """Print the LookML import graph (any topology) and optionally a project's effective model."""
     from lookml_agentops._util.hashing import canonical_json
     from lookml_agentops.lookml.graph import (
         effective_model_dict,
@@ -77,27 +91,34 @@ def graph(
         render_mermaid,
         render_text,
     )
-    from lookml_agentops.lookml.resolve import load_workspace, resolve_project
+    from lookml_agentops.lookml.resolve import ResolveError, load_workspace, resolve_project
 
     cfg = _cfg(config)
-    ws = load_workspace(cfg)
-    if fmt == "json":
-        payload = {p: effective_model_dict(resolve_project(ws, p)) for p in sorted(cfg.projects)}
-        if spoke:
-            payload = {spoke: payload[spoke]}
-        typer.echo(canonical_json(payload), nl=False)
-        return
-    typer.echo(render_mermaid(ws) if fmt == "mermaid" else render_text(ws), nl=False)
-    if spoke:
-        em = resolve_project(ws, spoke)
-        typer.echo(f"\neffective model: {spoke}")
-        typer.echo(render_fields_text(em), nl=False)
-        for problem in em.problems:
-            typer.echo(f"problem: {problem}", err=True)
+    try:
+        ws = load_workspace(cfg)
+        if fmt == "json":
+            names = (
+                [project]
+                if project
+                else sorted(p for p in cfg.projects if ws.projects[p].model_files)
+            )
+            payload = {p: effective_model_dict(resolve_project(ws, p)) for p in names}
+            typer.echo(canonical_json(payload), nl=False)
+            return
+        typer.echo(render_mermaid(ws) if fmt == "mermaid" else render_text(ws), nl=False)
+        if project:
+            em = resolve_project(ws, project)
+            typer.echo(f"\neffective model: {project}")
+            typer.echo(render_fields_text(em), nl=False)
+            for problem in em.problems:
+                typer.echo(f"problem: {problem}", err=True)
+    except ResolveError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
 
 
-@app.command()
-def lint(
+@generate_app.command("lint")
+def generate_lint(
     config: ConfigOpt = None,
     fmt: Annotated[str, typer.Option("--format", "-f", help="text | markdown | sarif")] = "text",
     output: Annotated[Path | None, typer.Option("--output", "-o", help="Write to file")] = None,
@@ -105,7 +126,7 @@ def lint(
         Path | None, typer.Option(help="Directory SARIF URIs are relative to (default: cwd)")
     ] = None,
 ) -> None:
-    """Check LookML + glossary metadata. Exits 1 when any error-level finding exists."""
+    """Validate LookML, the glossary and agent specs. Exits 1 on any error-level finding."""
     from lookml_agentops._util.hashing import canonical_json
     from lookml_agentops._util.io import write_text
     from lookml_agentops.lint.engine import run_lint
@@ -128,211 +149,6 @@ def lint(
         typer.echo(text, nl=False)
     if result.errors:
         raise typer.Exit(1)
-
-
-@app.command(name="compile")
-def compile_cmd(
-    config: ConfigOpt = None,
-    check: Annotated[
-        bool, typer.Option("--check", help="Fail if committed build artifacts are stale")
-    ] = False,
-    polish: Annotated[
-        bool, typer.Option("--polish", help="Polish rule prose with an LLM (not configured)")
-    ] = False,
-) -> None:
-    """Compile layered agent instructions, CA agent bodies and adherence tests into build/."""
-    from lookml_agentops.compile.build import check_build, compile_all
-    from lookml_agentops.compile.generate import CompileError
-
-    cfg = _cfg(config)
-    if polish:
-        typer.echo(
-            "--polish: no polisher is configured in this build. The unpolished output is the "
-            "source of truth; see lookml_agentops.compile.polish for the interface.",
-            err=True,
-        )
-        raise typer.Exit(2)
-    try:
-        if check:
-            stale = check_build(cfg)
-            if stale:
-                typer.echo("stale build artifacts (run `lkagent compile`):", err=True)
-                for s in stale:
-                    typer.echo(f"  {s}", err=True)
-                raise typer.Exit(1)
-            typer.echo("build artifacts are up to date")
-            return
-        result = compile_all(cfg)
-    except CompileError as exc:
-        typer.echo(f"compile error:\n{exc}", err=True)
-        raise typer.Exit(1) from exc
-    for w in result.warnings:
-        typer.echo(f"warning: {w}", err=True)
-    for spoke, instr in sorted(result.agents.items()):
-        n = {layer.layer_id: len(layer.rules) for layer in instr.layers}
-        typer.echo(f"{spoke}: {n} content_hash={instr.content_hash[:12]}")
-    typer.echo(f"wrote {len(result.files)} files to {result.out_dir}")
-
-
-@app.command()
-def verify(
-    config: ConfigOpt = None,
-    runner: Annotated[str, typer.Option(help="mock | ca | mcp")] = "",
-    profile: Annotated[
-        str, typer.Option(help="Mock vendor profile (v1, v2_fuzzy_values, ...)")
-    ] = "",
-    nightly: Annotated[
-        bool, typer.Option("--nightly", help="All spokes, all tests (default)")
-    ] = False,
-    hub_pr: Annotated[
-        str | None, typer.Option("--hub-pr", help="Run every spoke against the hub at BRANCH")
-    ] = None,
-    spoke_pr: Annotated[
-        tuple[str, str] | None,
-        typer.Option("--spoke-pr", help="SPOKE BRANCH: run one spoke at BRANCH"),
-    ] = None,
-    spoke: Annotated[list[str] | None, typer.Option(help="Limit to these spokes")] = None,
-    label: Annotated[str | None, typer.Option(help="Free-text label stored with the run")] = None,
-    golden_only: Annotated[
-        bool, typer.Option("--golden-only", help="Skip adherence tests")
-    ] = False,
-    no_record: Annotated[
-        bool, typer.Option("--no-record", help="Do not write run history")
-    ] = False,
-    fail_on: Annotated[str, typer.Option(help="fail | degraded | never")] = "fail",
-) -> None:
-    """Run golden + adherence tests through a runner and record the run."""
-    from lookml_agentops.verify.modes import ModeError, project_at_branch
-    from lookml_agentops.verify.run import VerifyOptions, run_verify
-    from lookml_agentops.verify.runners.ca import RunnerConfigError
-    from lookml_agentops.verify.summary import render_summary
-
-    cfg = _cfg(config)
-    opts = VerifyOptions(
-        runner=runner or cfg.verify.runner,
-        profile=profile or cfg.verify.vendor_profile,
-        mode="nightly",
-        spokes=list(spoke) if spoke else None,
-        label=label,
-        include_adherence=not golden_only,
-        record=not no_record,
-    )
-
-    def log(msg: str) -> None:
-        typer.echo(msg, err=True)
-
-    try:
-        if hub_pr and spoke_pr:
-            raise typer.BadParameter("use either --hub-pr or --spoke-pr")
-        if hub_pr:
-            opts.mode = f"hub-pr:{hub_pr}"
-            with project_at_branch(cfg, cfg.hub, hub_pr) as pr_cfg:
-                rec = run_verify(pr_cfg, opts, golden_cfg=cfg, log=log)
-        elif spoke_pr:
-            sp, branch = spoke_pr
-            if sp not in cfg.spokes:
-                raise typer.BadParameter(f"unknown spoke {sp!r}")
-            opts.mode = f"spoke-pr:{sp}:{branch}"
-            opts.spokes = [sp]
-            with project_at_branch(cfg, sp, branch) as pr_cfg:
-                rec = run_verify(pr_cfg, opts, golden_cfg=cfg, log=log)
-        else:
-            rec = run_verify(cfg, opts, log=log)
-    except (ModeError, RunnerConfigError, ValueError) as exc:
-        typer.echo(f"verify: {exc}", err=True)
-        raise typer.Exit(2) from exc
-    typer.echo(render_summary(rec), nl=False)
-    bad = {"fail", "error"} | ({"degraded"} if fail_on == "degraded" else set())
-    if fail_on != "never" and any(r.status in bad for r in rec.results):
-        raise typer.Exit(1)
-
-
-@app.command(name="attribute")
-def attribute_cmd(
-    base: Annotated[str | None, typer.Argument(help="Base run id (default: previous run)")] = None,
-    head: Annotated[str | None, typer.Argument(help="Head run id (default: latest run)")] = None,
-    config: ConfigOpt = None,
-    fmt: Annotated[str, typer.Option("--format", "-f", help="text | json")] = "text",
-) -> None:
-    """Classify each changed test between two runs as vendor / hub / spoke / unknown."""
-    from lookml_agentops._util.hashing import canonical_json
-    from lookml_agentops.attribute.attribute import attribute, render_text
-    from lookml_agentops.verify.history import History
-
-    cfg = _cfg(config)
-    with History(cfg.path(cfg.verify.history)) as h:
-        ids = h.run_ids()
-        if len(ids) < 2 and not (base and head):
-            typer.echo("need at least two recorded runs (lkagent verify)", err=True)
-            raise typer.Exit(2)
-        head_id = head or ids[-1]
-        base_id = base or ids[ids.index(head_id) - 1]
-        att = attribute(h.load(base_id), h.load(head_id))
-    if fmt == "json":
-        typer.echo(canonical_json(att.model_dump(mode="json")), nl=False)
-    else:
-        typer.echo(render_text(att), nl=False)
-
-
-@app.command()
-def report(
-    config: ConfigOpt = None,
-    run: Annotated[str | None, typer.Option(help="Run to report on (default: latest)")] = None,
-    base: Annotated[
-        str | None, typer.Option(help="Attribution base (default: previous run)")
-    ] = None,
-    trend: Annotated[int, typer.Option(help="Number of runs in the trend")] = 10,
-    out_dir: Annotated[
-        Path | None, typer.Option(help="Output directory (default: reports/)")
-    ] = None,
-) -> None:
-    """Write report.md (PR-comment sized) and a self-contained report.html."""
-    from lookml_agentops.report.build import write_reports
-    from lookml_agentops.report.data import build_report_data
-    from lookml_agentops.verify.history import History
-
-    cfg = _cfg(config)
-    with History(cfg.path(cfg.verify.history)) as h:
-        try:
-            data = build_report_data(h, head=run, base=base, trend=trend)
-        except ValueError as exc:
-            typer.echo(str(exc), err=True)
-            raise typer.Exit(2) from exc
-    for p in write_reports(data, out_dir or cfg.path("reports")):
-        typer.echo(f"wrote {p}")
-
-
-@app.command()
-def demo(
-    workdir: Annotated[Path, typer.Option(help="Scratch directory (recreated)")] = Path(
-        "lkagent-demo"
-    ),
-    source: Annotated[
-        Path | None,
-        typer.Option(help="Example project to copy (default: bundled Harborline example)"),
-    ] = None,
-) -> None:
-    """Offline drift demo: vendor, hub and spoke changes, attributed and reported."""
-    from lookml_agentops.demo import run_demo
-
-    src = source or _find_example()
-    res = run_demo(src, workdir.resolve(), log=typer.echo)
-    for name, paths in res.reports.items():
-        typer.echo(f"{name} report: {paths[1]}")
-    if not res.ok:
-        for p in res.problems:
-            typer.echo(f"demo check failed: {p}", err=True)
-        raise typer.Exit(1)
-    typer.echo("demo OK: vendor, hub and spoke changes were attributed correctly")
-
-
-def _find_example() -> Path:
-    for d in (Path.cwd(), *Path.cwd().parents):
-        cand = d / "examples" / "harborline" / "lkagent.yaml"
-        if cand.exists():
-            return cand.parent
-    typer.echo("could not find examples/harborline; pass --source", err=True)
-    raise typer.Exit(2)
 
 
 if __name__ == "__main__":  # pragma: no cover

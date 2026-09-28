@@ -23,7 +23,7 @@ Exempt a single object with `# lkagent:disable LKA001 reason="..."` on the line 
 | LKA004 | `pii-untagged` | error | A column that looks like personal data without a pii tag can leak through an agent. | Add tags: ["pii", "pii:<kind>"] and hide or grant-protect the field. |
 | LKA005 | `pii-unprotected` | error | PII must never be reachable by default by agents or users. | Set `hidden: yes` or `required_access_grants: [...]`. |
 | LKA006 | `ambiguous-measure-name` | warning | The same measure name meaning different things in different places confuses agents. | Rename one of the measures or align their SQL. |
-| LKA007 | `certified-measure-redefined` | error | Spokes may add metrics but must not redefine hub certified metrics. | Move the change to the hub (with review) or create a new, differently named measure. |
+| LKA007 | `certified-measure-redefined` | error | A project that imports a certified metric may add metrics but must not redefine it. | Change the metric in the project that owns it (with review), or add a differently named measure. |
 | LKA008 | `missing-test-account-guard` | error | Test accounts inflate every metric; explores over them need a permanent guard. | Add `sql_always_where: NOT ${customers.is_test_account} ;;`. |
 | LKA009 | `missing-value-format` | note | Unformatted measures produce ambiguous answers (dollars? percent?). | Add `value_format_name:` (usd, percent_1, decimal_0, ...). |
 | LKA010 | `date-without-fiscal-join` | warning | In fiscal-reporting explores, 'last quarter' must resolve through the fiscal calendar. | Join fiscal_calendar on this date (from: fiscal_calendar) or hide the field. |

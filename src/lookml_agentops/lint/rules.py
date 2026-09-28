@@ -1,7 +1,7 @@
 """Lint rules. Each rule has a stable ID, default severity, rationale and fix hint.
 
-Hub objects appear in every spoke's effective model; the engine de-duplicates identical findings,
-so rules can simply iterate over every model.
+Objects from an imported project appear in every importing project's effective model; the engine
+de-duplicates identical findings, so rules can simply iterate over every model.
 """
 
 from __future__ import annotations
@@ -168,36 +168,30 @@ def check_duplicate_measure_sql(ctx: LintContext) -> Iterator[RawFinding]:
                 yield _raw(
                     f,
                     f"measure name {name!r} has {len(variants)} different definitions across "
-                    f"explores/spokes ({', '.join(places)})",
+                    f"explores/projects ({', '.join(places)})",
                 )
 
 
 def check_certified_redefined(ctx: LintContext) -> Iterator[RawFinding]:
-    hub = ctx.models.get(ctx.hub)
-    if hub is None:
-        return
+    """A project must not change the SQL/type/filters of a certified measure it imports."""
     for project, em in ctx.models.items():
-        if project == ctx.hub:
-            continue
-        for vname, hv in hub.views.items():
-            sv = em.views.get(vname)
-            if sv is None:
-                continue
-            for fname, hf in hv.fields.items():
-                if hf.kind != "measure" or not hf.has_tag("certified"):
+        for v in em.views.values():
+            for f in v.fields.values():
+                origin = f.origin_project
+                if f.kind != "measure" or origin == project or origin not in ctx.models:
                     continue
-                sf = sv.fields.get(fname)
-                if sf is None:
+                of = ctx.models[origin].field(v.name, f.name)
+                if of is None or not of.has_tag("certified"):
                     continue
                 if (
-                    _norm_sql(sf.sql) != _norm_sql(hf.sql)
-                    or sf.type != hf.type
-                    or (sf.params.get("filters") != hf.params.get("filters"))
+                    _norm_sql(f.sql) != _norm_sql(of.sql)
+                    or f.type != of.type
+                    or f.params.get("filters") != of.params.get("filters")
                 ):
                     yield _raw(
-                        sf,
-                        f"{sf.id}: spoke {project} redefines hub certified measure "
-                        f"(sql/type/filters changed at {sf.last_at}); spokes may add, not redefine",
+                        f,
+                        f"{f.id}: project {project} redefines certified measure owned by {origin} "
+                        f"(sql/type/filters changed at {f.last_at}); importing projects may add, not redefine",
                     )
 
 
@@ -363,8 +357,8 @@ ALL_RULES: list[Rule] = [
         "LKA007",
         "certified-measure-redefined",
         "error",
-        "Spokes may add metrics but must not redefine hub certified metrics.",
-        "Move the change to the hub (with review) or create a new, differently named measure.",
+        "A project that imports a certified metric may add metrics but must not redefine it.",
+        "Change the metric in the project that owns it (with review), or add a differently named measure.",
         check_certified_redefined,
     ),
     Rule(

@@ -381,6 +381,33 @@ def generate(seed: int, as_of: dt.date, scale: float = 1.0) -> SeedResult:
         "reason": reasons.tolist(),
     }
 
+    # ---- procurement (standalone project: suppliers + purchase orders) ----------------------
+    r = _rng(seed, "procurement")
+    n_sup = 40
+    sup_adj = ["Atlas", "Beacon", "Cobalt", "Driftwood", "Ember", "Fjord", "Granite", "Harbor"]
+    sup_noun = ["Industrial Supply", "Components", "Materials", "Wholesale", "Manufacturing"]
+    t["suppliers"] = {
+        "supplier_id": list(range(1, n_sup + 1)),
+        "supplier_name": [
+            f"{sup_adj[i % len(sup_adj)]} {sup_noun[(i // len(sup_adj)) % len(sup_noun)]}"
+            for i in range(n_sup)
+        ],
+        "category_id": r.integers(1, len(CATEGORIES) + 1, size=n_sup).tolist(),
+        "is_preferred": (r.random(n_sup) < 0.3).tolist(),
+    }
+    n_po = max(500, int(3000 * scale))
+    po_ts = np.sort(start_epoch + r.integers(0, end_epoch - start_epoch, size=n_po))
+    po_amount = (np.exp(r.normal(8.0, 0.9, size=n_po)) * 100).astype(np.int64)
+    po_status = r.choice(["received", "open", "cancelled"], size=n_po, p=[0.8, 0.15, 0.05])
+    t["purchase_orders"] = {
+        "po_id": list(range(1, n_po + 1)),
+        "supplier_id": r.integers(1, n_sup + 1, size=n_po).tolist(),
+        "warehouse_id": r.integers(1, len(WAREHOUSES) + 1, size=n_po).tolist(),
+        "ordered_at_utc": po_ts.tolist(),
+        "amount": po_amount.tolist(),
+        "status": po_status.tolist(),
+    }
+
     # ---- fiscal calendar -------------------------------------------------------------------
     days: list[dt.date] = []
     d = dt.date(2023, 2, 1)
