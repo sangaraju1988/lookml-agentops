@@ -61,5 +61,40 @@ def seed(
     typer.echo(f"content_hash: {manifest.content_hash}")
 
 
+@app.command()
+def graph(
+    config: ConfigOpt = None,
+    fmt: Annotated[str, typer.Option("--format", "-f", help="text | mermaid | json")] = "text",
+    spoke: Annotated[
+        str | None, typer.Option(help="Also print the effective model of this project")
+    ] = None,
+) -> None:
+    """Print the project import graph and (optionally) a project's effective model."""
+    from lookml_agentops._util.hashing import canonical_json
+    from lookml_agentops.lookml.graph import (
+        effective_model_dict,
+        render_fields_text,
+        render_mermaid,
+        render_text,
+    )
+    from lookml_agentops.lookml.resolve import load_workspace, resolve_project
+
+    cfg = _cfg(config)
+    ws = load_workspace(cfg)
+    if fmt == "json":
+        payload = {p: effective_model_dict(resolve_project(ws, p)) for p in sorted(cfg.projects)}
+        if spoke:
+            payload = {spoke: payload[spoke]}
+        typer.echo(canonical_json(payload), nl=False)
+        return
+    typer.echo(render_mermaid(ws) if fmt == "mermaid" else render_text(ws), nl=False)
+    if spoke:
+        em = resolve_project(ws, spoke)
+        typer.echo(f"\neffective model: {spoke}")
+        typer.echo(render_fields_text(em), nl=False)
+        for problem in em.problems:
+            typer.echo(f"problem: {problem}", err=True)
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()
