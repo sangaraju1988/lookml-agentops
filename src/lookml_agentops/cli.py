@@ -264,63 +264,51 @@ def generate_resolve_golden(config: ConfigOpt = None) -> None:
 def generate_deploy(
     agent: Annotated[str, typer.Argument(help="Agent id to deploy")],
     config: ConfigOpt = None,
-    stage_only: Annotated[
-        bool, typer.Option("--stage-only", help="Write staging and validate; do not publish")
-    ] = False,
 ) -> None:
-    """Stage compiled context on the CA data agent, validate it with diagnose, then publish ([ca])."""
-    from lookml_agentops.generate.deploy import (
-        DeployError,
-        PublishNotConfirmed,
-        client_from_env,
-        deploy,
-        staging_runner,
-    )
+    """Stage compiled context on the CA data agent and test it there ([ca]). Publishing is manual."""
+    from lookml_agentops.generate.deploy import DeployError, client_from_env, deploy, staging_runner
 
     cfg = _cfg(config)
     try:
         client = client_from_env(cfg)
         try:
-            res = deploy(
-                cfg,
-                agent,
-                client=client,
-                run_against_staging=staging_runner,
-                publish=not stage_only,
-            )
+            res = deploy(cfg, agent, client=client, run_against_staging=staging_runner)
         finally:
             client.close()
-    except PublishNotConfirmed as exc:
-        typer.echo(f"staged and validated, but not published: {exc}", err=True)
-        raise typer.Exit(3) from exc
     except DeployError as exc:
         typer.echo(f"deploy: {exc}", err=True)
         raise typer.Exit(2) from exc
     typer.echo(
         f"{agent}: staged (context {res.context_hash}); pass rate {res.pass_rate:.1%} "
-        f"(threshold {res.threshold:.1%}); published={res.published}"
+        f"(threshold {res.threshold:.1%}); ready to publish: {'yes' if res.ready_to_publish else 'no'}"
     )
     for n in res.notes:
         typer.echo(f"  {n}")
-    if not res.published and not stage_only:
+    if not res.ready_to_publish:
         raise typer.Exit(1)
 
 
 @generate_app.command("rollback")
 def generate_rollback(
-    agent: Annotated[str, typer.Argument(help="Agent id to roll back")],
+    agent: Annotated[str, typer.Argument(help="Agent id")],
     config: ConfigOpt = None,
 ) -> None:
-    """Restore the last published context (pending API confirmation; see docs/api-verification.md)."""
-    from lookml_agentops.generate.deploy import PublishNotConfirmed, UnconfirmedPublish
+    """Explain how to roll back (manual, in the UI) and list this agent's recorded deployments."""
+    from lookml_agentops.generate.deploy import MANUAL_ROLLBACK, deployment_history
 
     cfg = _cfg(config)
-    if agent not in cfg.diagnose.ca.agents:
-        typer.echo(f"rollback: no CA data agent configured for {agent}", err=True)
-        raise typer.Exit(2)
-    # TODO(verify-api): the CA API documents no publish/rollback operation; see deploy.py.
-    typer.echo(f"rollback: {PublishNotConfirmed(UnconfirmedPublish.MESSAGE)}", err=True)
-    raise typer.Exit(3)
+    typer.echo(MANUAL_ROLLBACK)
+    history = deployment_history(cfg, agent)
+    if not history:
+        typer.echo(f"no deployments of {agent} recorded in .lkagent/deployments.json")
+        return
+    typer.echo(f"recorded deployments of {agent} (newest last):")
+    for d in history:
+        ready = "ready to publish" if d.get("ready_to_publish") else "below threshold"
+        typer.echo(
+            f"  {d['at']}  spec {d['spec_hash'][:12]}  context {d['context_hash']}  "
+            f"pass {d['pass_rate']:.1%}  {ready}  run {d['run_id']}"
+        )
 
 
 @diagnose_app.command("run")

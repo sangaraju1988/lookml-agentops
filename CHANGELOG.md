@@ -11,6 +11,8 @@
 - Tracked inputs with owners (`owners.yaml`), dependency tracing, field-level model diffs,
   verdicts input / multiple / data / external, impact analysis, vendor evidence bundles.
 - History schema v2 (v1 files are moved aside automatically).
+- `lkagent generate deploy` (staged: write staging, test against it, pass-rate gate). Publishing
+  and rollback are manual in the Looker/CA UI; `generate rollback` prints the steps.
 - Example: four projects (including a standalone one), four agent specs, owners for six teams.
 
 ## 0.1.0

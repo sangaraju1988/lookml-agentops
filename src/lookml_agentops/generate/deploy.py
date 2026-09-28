@@ -14,10 +14,11 @@ Because the documented update mask is the whole ``data_analytics_agent`` object,
 sends the agent's *current* ``published_context`` back unchanged, so staging never touches
 production.
 
-NOT confirmed — and therefore not implemented: how staging is *published* (there is no publish
-method; whether writing ``published_context`` via updateSync is the intended mechanism is not
-documented) and how to roll back. :class:`UnconfirmedPublish` makes ``publish``/``rollback`` stop
-with a clear message. TODO(verify-api): implement once the mechanism is confirmed.
+Publishing and rollback are **manual by design**: the API reference documents no publish or
+rollback operation (``last_published_context`` is output-only), so lkagent never writes the live
+``published_context``. After a staged run passes the gate, a person publishes from the Looker /
+Conversational Analytics UI, and rolls back there too. ``lkagent generate rollback`` prints that
+guidance plus the recorded deployment history.
 
 Credentials: LKAGENT_CA_ACCESS_TOKEN, GOOGLE_CLOUD_PROJECT, LOOKER_INSTANCE_URI (env only).
 """
@@ -29,7 +30,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 from lookml_agentops._util.hashing import canonical_json, sha256_text
 from lookml_agentops._util.io import write_text
@@ -43,10 +44,6 @@ from lookml_agentops.generate.exporters.ca_api import (
 
 class DeployError(Exception):
     pass
-
-
-class PublishNotConfirmed(DeployError):
-    """Raised because the CA API does not document how to publish staging or roll back."""
 
 
 def _pick(d: dict[str, Any], snake: str, camel: str) -> Any:
@@ -113,26 +110,16 @@ class CAAdminClient:
         self._client.close()
 
 
-class Publisher(Protocol):
-    def publish(self, client: CAAdminClient, agent: str) -> None: ...
-
-    def rollback(self, client: CAAdminClient, agent: str) -> None: ...
-
-
-class UnconfirmedPublish:
-    """Placeholder until the CA API documents publish/rollback. TODO(verify-api)."""
-
-    MESSAGE = (
-        "the CA API reference documents staging_context, published_context and an output-only "
-        "last_published_context, but no publish or rollback operation. lkagent will not guess; "
-        "publish from the Looker/CA UI, or confirm the mechanism so it can be implemented."
-    )
-
-    def publish(self, client: CAAdminClient, agent: str) -> None:
-        raise PublishNotConfirmed(self.MESSAGE)
-
-    def rollback(self, client: CAAdminClient, agent: str) -> None:
-        raise PublishNotConfirmed(self.MESSAGE)
+MANUAL_PUBLISH = (
+    "Publishing is manual: open the data agent in the Looker / Conversational Analytics UI, review "
+    "the staged instructions, and publish them there. lkagent never changes the live (published) "
+    "context."
+)
+MANUAL_ROLLBACK = (
+    "Rollback is manual: re-stage the last good spec (`git checkout <commit> -- agents/`, then "
+    "`lkagent generate deploy <agent>`) and publish it from the Looker / Conversational Analytics "
+    "UI, or put back the previous instructions directly in the UI."
+)
 
 
 @dataclass
@@ -145,7 +132,7 @@ class DeployResult:
     run_id: str | None = None
     context_hash: str = ""
     spec_hash: str = ""
-    published: bool = False
+    ready_to_publish: bool = False  # staged tests met the threshold; publish manually in the UI
     notes: list[str] = field(default_factory=list)
 
 
@@ -190,7 +177,7 @@ def record_deployment(cfg: LkagentConfig, res: DeployResult) -> Path:
             "spec_hash": res.spec_hash,
             "context_hash": res.context_hash,
             "staged": res.staged,
-            "published": res.published,
+            "ready_to_publish": res.ready_to_publish,
             "pass_rate": res.pass_rate,
             "threshold": res.threshold,
             "run_id": res.run_id,
@@ -207,10 +194,12 @@ def deploy(
     *,
     client: CAAdminClient,
     run_against_staging: Any,  # Callable[[LkagentConfig, str], tuple[float, str]] -> (pass rate, run id)
-    publisher: Publisher | None = None,
     looker_instance_uri: str | None = None,
-    publish: bool = True,
 ) -> DeployResult:
+    """Stage the compiled context, test it against staging and apply the pass-rate gate.
+
+    The live (published) context is never modified; publishing is done by a person in the UI.
+    """
     remote = cfg.diagnose.ca.agents.get(agent)
     if not remote:
         raise DeployError(f"no CA data agent configured for {agent} (diagnose.ca.agents)")
@@ -232,13 +221,22 @@ def deploy(
     if res.pass_rate < res.threshold:
         res.notes.append(
             f"pass rate {res.pass_rate:.1%} against staging is below the threshold "
-            f"{res.threshold:.1%}; not publishing"
+            f"{res.threshold:.1%}; do not publish this version"
         )
-    elif publish:
-        (publisher or UnconfirmedPublish()).publish(client, remote)
-        res.published = True
+    else:
+        res.ready_to_publish = True
+        res.notes.append(MANUAL_PUBLISH)
     record_deployment(cfg, res)
     return res
+
+
+def deployment_history(cfg: LkagentConfig, agent: str) -> list[dict[str, Any]]:
+    path = cfg.path(".lkagent/deployments.json")
+    if not path.exists():
+        return []
+    return [
+        d for d in json.loads(path.read_text()).get("deployments", []) if d.get("agent") == agent
+    ]
 
 
 def staging_runner(cfg: LkagentConfig, agent: str) -> tuple[float, str]:

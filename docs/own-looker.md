@@ -75,14 +75,19 @@ If the runner's responses don't expose the generated Looker query, tests are com
 
 ```bash
 export LOOKER_INSTANCE_URI=https://<instance>.looker.app
-lkagent generate deploy finance-analyst --stage-only
+lkagent generate deploy finance-analyst
 ```
 
 This writes `build/finance-analyst/ca_context.json` into the data agent's `staging_context`
 (sending the current `published_context` back unchanged), runs the agent's tests against staging
-(`contextVersion: STAGING`), and records the result in `.lkagent/deployments.json`. Promotion to
-production isn't automated yet, because the CA API documents no publish or rollback operation.
-Publish from the Looker/CA UI after a green staged run.
+(`contextVersion: STAGING`), and records the result in `.lkagent/deployments.json`. It reports
+"ready to publish" only when the pass rate meets `diagnose.deploy.pass_threshold`.
+
+**Publishing and rollback are manual by design.** lkagent never changes what live users see. After
+a green staged run, a person publishes from the Looker / Conversational Analytics UI. To roll back,
+re-stage the last good spec (`git checkout <commit> -- agents/`, then `lkagent generate deploy`)
+and publish it, or put back the previous instructions in the UI. `lkagent generate rollback
+<agent>` prints these steps plus the recorded deployment history.
 
 ## 7. CI for any project
 

@@ -55,7 +55,7 @@ _Last reviewed: 2026-09-28._
 | Create `POST …/dataAgents:createSync`; update `PATCH …/dataAgents/{id}:updateSync?updateMask=…`; get; `DELETE …:deleteSync` | ✅ confirmed | build-agent-http doc |
 | Resource fields `stagingContext` ("used to test and validate changes before publishing"), `publishedContext` ("used by the Chat API in production"), `lastPublishedContext` ("output-only … populated by the system when the published context is updated") | ✅ confirmed | REST reference |
 | Methods: create, createSync, delete, deleteSync, get, getIamPolicy, list, listAccessible, patch, setIamPolicy, updateSync; **no publish method** | ✅ confirmed | REST reference |
-| How to *publish* staging → published, and how to roll back | ❌ not documented. See the R7 open question in `docs/generalization-plan.md`. | — |
+| How to *publish* staging → published, and how to roll back | ❌ not documented. **Decision:** publishing and rollback stay manual (in the UI); lkagent only writes `staging_context`. | — |
 | Chat against staging: `dataAgentContext.contextVersion: STAGING` | ✅ confirmed (enum STAGING/PUBLISHED) | chat reference |
 
 ## Looker UI agent editor (`generate/exporters/looker_ui.py`)
