@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 FieldKind = Literal["dimension", "dimension_group", "measure", "filter", "parameter"]
 FIELD_KINDS: tuple[str, ...] = ("dimension", "dimension_group", "measure", "filter", "parameter")
+CATALOG_PROJECT = "@catalog"  # pseudo-project for locations inside the glossary file
 ProvOp = Literal["define", "refine", "extend", "override"]
 
 
@@ -22,6 +23,8 @@ class Loc:
     line: int
 
     def __str__(self) -> str:
+        if self.project == CATALOG_PROJECT:
+            return f"{self.file}:{self.line}"
         return f"{self.project}/{self.file}:{self.line}"
 
 

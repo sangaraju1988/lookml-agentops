@@ -1,0 +1,184 @@
+# Harborline Supply Co. business glossary (knowledge catalog export).
+# linked_fields use <project>.<view>.<field> where <project> is the project that DEFINES the field.
+version: 1
+terms:
+  - id: net_revenue
+    name: Net Revenue
+    definition: >-
+      Gross order revenue minus discounts minus refunds, attributed to the order date. This is
+      the company's default meaning of "revenue" and "sales".
+    synonyms: [revenue, sales, net sales, turnover]
+    owner: finance
+    sensitivity: internal
+    linked_fields: [core_hub.orders.net_revenue]
+    status: approved
+
+  - id: gross_revenue
+    name: Gross Revenue
+    definition: Sum of order line amounts before discounts and refunds.
+    synonyms: [gross sales, bookings]
+    owner: finance
+    sensitivity: internal
+    linked_fields: [core_hub.orders.gross_revenue]
+    status: approved
+
+  - id: recognized_revenue
+    name: Recognized Revenue
+    definition: >-
+      Invoiced amount recognized on the invoice date, excluding void invoices.
+    synonyms: [invoiced revenue, billed revenue]
+    owner: finance
+    sensitivity: internal
+    linked_fields: [core_hub.invoices.recognized_revenue]
+    status: approved
+
+  - id: order_count
+    name: Order Count
+    definition: Number of orders, excluding test accounts and soft-deleted orders.
+    synonyms: [orders, number of orders, order volume]
+    owner: central data team
+    sensitivity: internal
+    linked_fields: [core_hub.orders.order_count]
+    status: approved
+
+  - id: active_customer
+    name: Active Customer
+    definition: A non-test customer with at least one non-deleted order in the period.
+    synonyms: [active customers, buying customers]
+    owner: sales operations
+    sensitivity: internal
+    linked_fields: [core_hub.orders.active_customer_count]
+    status: approved
+
+  - id: customer
+    name: Customer
+    definition: A business that buys from Harborline, identified by its legal company name.
+    synonyms: [customer name, account]
+    owner: sales operations
+    sensitivity: internal
+    linked_fields: [core_hub.customers.company_name]
+    status: approved
+
+  - id: customer_segment
+    name: Customer Segment
+    definition: Enterprise, Mid-Market or SMB, based on annual spend band.
+    synonyms: [segment]
+    owner: sales operations
+    sensitivity: internal
+    linked_fields: [core_hub.customers.segment]
+    status: approved
+
+  - id: region
+    name: Region
+    definition: Sales region of the customer. "Pacific NW" is a legacy spelling of "Pacific Northwest".
+    synonyms: [sales region, territory]
+    owner: sales operations
+    sensitivity: internal
+    linked_fields: [core_hub.regions.region_name]
+    status: approved
+
+  - id: fiscal_quarter
+    name: Fiscal Quarter
+    definition: >-
+      A three-month period of the Harborline fiscal year, which starts February 1. "Last quarter"
+      means the last completed fiscal quarter.
+    synonyms: [quarter, fiscal qtr]
+    owner: finance
+    sensitivity: public
+    linked_fields: [core_hub.fiscal_calendar.fiscal_quarter_label]
+    status: approved
+
+  - id: fiscal_year
+    name: Fiscal Year
+    definition: >-
+      February 1 to January 31, named by the calendar year in which it ends (FY2026 = Feb 2025 to
+      Jan 2026).
+    synonyms: [fy]
+    owner: finance
+    sensitivity: public
+    linked_fields: [core_hub.fiscal_calendar.fiscal_year]
+    status: approved
+
+  - id: on_time_delivery
+    name: On-Time Delivery
+    definition: Share of delivered shipments delivered on or before the promised date.
+    synonyms: [on-time rate, otd, on time delivery rate]
+    owner: logistics
+    sensitivity: internal
+    linked_fields: [core_hub.shipments.on_time_delivery_rate]
+    status: approved
+
+  - id: shipment_count
+    name: Shipment Count
+    definition: Number of shipments that left a Harborline warehouse.
+    synonyms: [shipments, number of shipments]
+    owner: logistics
+    sensitivity: internal
+    linked_fields: [core_hub.shipments.shipment_count]
+    status: approved
+
+  - id: shipment_status
+    name: Shipment Status
+    definition: >-
+      Normalized carrier status. "Shipped" and "Shipped - Partial" are different statuses.
+    synonyms: [status]
+    owner: logistics
+    sensitivity: internal
+    linked_fields: [core_hub.shipments.status]
+    status: approved
+
+  - id: carrier
+    name: Carrier
+    definition: >-
+      Freight carrier that moved the shipment. "Northstar Freight" and "North Star Freight LLC" are
+      different companies.
+    synonyms: [shipping carrier, freight carrier]
+    owner: logistics
+    sensitivity: internal
+    linked_fields: [core_hub.carriers.carrier_name]
+    status: approved
+
+  - id: warehouse
+    name: Warehouse
+    definition: Harborline distribution center that fulfilled the order.
+    synonyms: [distribution center, dc]
+    owner: logistics
+    sensitivity: internal
+    linked_fields: [core_hub.warehouses.warehouse_name]
+    status: approved
+
+  - id: refund_rate
+    name: Refund Rate
+    definition: Refunds attributed to the order period divided by gross revenue.
+    synonyms: [refund percentage]
+    owner: finance
+    sensitivity: internal
+    linked_fields: [finance_spoke.orders.refund_rate]
+    status: approved
+
+  - id: days_sales_outstanding
+    name: Days Sales Outstanding
+    definition: Average days from invoice date to payment date for paid invoices.
+    synonyms: [dso, days to pay]
+    owner: finance
+    sensitivity: internal
+    linked_fields: [finance_spoke.payments.days_sales_outstanding]
+    status: approved
+
+  - id: transit_time
+    name: Transit Time
+    definition: Days between a shipment leaving the warehouse and its delivery, measured in UTC.
+    synonyms: [transit days, average transit time, delivery time]
+    owner: logistics
+    sensitivity: internal
+    linked_fields: [logistics_spoke.shipments.avg_transit_days]
+    status: approved
+
+  - id: customer_lifetime_value
+    name: Customer Lifetime Value
+    definition: Projected net revenue from a customer over the relationship. Definition under review.
+    synonyms: [clv, ltv]
+    owner: finance
+    sensitivity: internal
+    linked_fields: []
+    status: draft

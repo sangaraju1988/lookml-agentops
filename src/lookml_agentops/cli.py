@@ -96,5 +96,39 @@ def graph(
             typer.echo(f"problem: {problem}", err=True)
 
 
+@app.command()
+def lint(
+    config: ConfigOpt = None,
+    fmt: Annotated[str, typer.Option("--format", "-f", help="text | markdown | sarif")] = "text",
+    output: Annotated[Path | None, typer.Option("--output", "-o", help="Write to file")] = None,
+    sarif_base: Annotated[
+        Path | None, typer.Option(help="Directory SARIF URIs are relative to (default: cwd)")
+    ] = None,
+) -> None:
+    """Check LookML + glossary metadata. Exits 1 when any error-level finding exists."""
+    from lookml_agentops._util.hashing import canonical_json
+    from lookml_agentops._util.io import write_text
+    from lookml_agentops.lint.engine import run_lint
+    from lookml_agentops.lint.reporters.markdown import render_markdown
+    from lookml_agentops.lint.reporters.sarif import render_sarif
+    from lookml_agentops.lint.reporters.text import render_text
+
+    cfg = _cfg(config)
+    result = run_lint(cfg)
+    if fmt == "sarif":
+        text = canonical_json(render_sarif(result, cfg, sarif_base or Path.cwd()))
+    elif fmt == "markdown":
+        text = render_markdown(result)
+    else:
+        text = render_text(result)
+    if output:
+        write_text(output, text)
+        typer.echo(f"wrote {output} ({result.errors} error(s), {result.warnings} warning(s))")
+    else:
+        typer.echo(text, nl=False)
+    if result.errors:
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

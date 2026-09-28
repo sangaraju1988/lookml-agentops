@@ -41,4 +41,12 @@ explore: invoices_base {
     relationship: many_to_one
     sql_on: ${invoices.invoice_date} = ${invoice_fiscal.calendar_date} ;;
   }
+
+  join: created_fiscal {
+    from: fiscal_calendar
+    view_label: "Order Fiscal Period"
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${orders.created_date} = ${created_fiscal.calendar_date} ;;
+  }
 }

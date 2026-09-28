@@ -1,0 +1,25 @@
+LKA000 warning - project core_hub
+LKA015 error catalog/glossary.yaml:3 term net_revenue
+LKA011 error catalog/glossary.yaml:9 term gross_revenue
+LKA015 error catalog/glossary.yaml:9 term gross_revenue
+LKA008 error bad_spoke/bad.explore.lkml:1 explore bad_orders
+LKA012 warning bad_spoke/bad.explore.lkml:1 explore bad_orders
+LKA016 warning bad_spoke/bad.explore.lkml:6 explore undocumented_invoices
+LKA007 error bad_spoke/refinements.view.lkml:2 orders.net_revenue
+LKA008 error core_hub/explores/orders.explore.lkml:1 explore orders_base
+LKA004 error core_hub/views/customers.view.lkml:10 customers.contact_email
+LKA005 error core_hub/views/customers.view.lkml:15 customers.phone
+LKA018 error core_hub/views/customers.view.lkml:21 customers.ssn
+LKA006 warning core_hub/views/invoices.view.lkml:10 invoices.revenue
+LKA001 warning core_hub/views/orders.view.lkml:10 orders.status
+LKA010 warning core_hub/views/orders.view.lkml:19 orders.created
+LKA010 warning core_hub/views/orders.view.lkml:19 orders.created
+LKA009 note core_hub/views/orders.view.lkml:26 orders.order_count
+LKA003 error core_hub/views/orders.view.lkml:42 orders.gross_revenue
+LKA014 warning core_hub/views/orders.view.lkml:42 orders.gross_revenue
+LKA006 warning core_hub/views/orders.view.lkml:51 orders.revenue
+LKA002 warning core_hub/views/orders.view.lkml:58 orders.discount_total
+LKA003 error core_hub/views/orders.view.lkml:58 orders.discount_total
+LKA017 error core_hub/views/orders.view.lkml:58 orders.discount_total
+LKA000 warning core_hub/views/orders.view.lkml:66 core_hub/views/orders.view.lkml
+LKA013 warning core_hub/views/orders.view.lkml:67 orders.hidden_but_exposed

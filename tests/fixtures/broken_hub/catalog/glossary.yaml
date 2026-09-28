@@ -1,0 +1,19 @@
+version: 1
+terms:
+  - id: net_revenue
+    name: Net Revenue
+    definition: Gross minus discounts minus refunds.
+    synonyms: [revenue]
+    linked_fields: [core_hub.orders.net_revenue]
+    status: approved
+  - id: gross_revenue
+    name: Gross Revenue
+    definition: Before discounts.
+    synonyms: [revenue]
+    linked_fields: [core_hub.orders.missing_field]
+    status: approved
+  - id: order_count
+    name: Order Count
+    definition: Number of orders.
+    linked_fields: [core_hub.orders.order_count]
+    status: approved

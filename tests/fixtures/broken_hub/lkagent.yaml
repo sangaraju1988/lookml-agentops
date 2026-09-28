@@ -1,0 +1,10 @@
+# Intentionally broken hub + spoke. Every lint rule must fire; see tests/unit/test_lint.py.
+version: 1
+name: broken
+as_of: 2026-01-20
+projects:
+  core_hub: {path: lookml/core_hub, role: hub}
+  bad_spoke: {path: lookml/bad_spoke, role: spoke}
+catalog: {adapter: yaml, path: catalog/glossary.yaml}
+lint:
+  max_ai_fields: 3
