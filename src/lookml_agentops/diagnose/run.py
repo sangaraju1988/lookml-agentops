@@ -90,6 +90,7 @@ class RunOptions:
     record: bool = True
     rebaseline: bool = False
     include_generated: bool = True
+    tests: set[str] | None = None  # run only these test ids (e.g. from `diagnose impact`)
 
 
 def plan_tests(
@@ -202,6 +203,8 @@ def run_diagnose(
     for ca in agents.values():
         models.update(ca.models)
     tests = plan_tests(cfg, agents, opts.include_generated)
+    if opts.tests is not None:
+        tests = [lt for lt in tests if lt.test.id in opts.tests]
     runner = make_runner(opts.runner, opts.scenario, cfg)
     catalog = load_catalog(cfg)
     if opts.runner == "mock" or any(lt.sql_path for lt in tests):

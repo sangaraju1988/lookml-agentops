@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from lookml_agentops._util.hashing import sha256_bytes, sha256_obj
 from lookml_agentops._util.io import write_json
+from lookml_agentops.seed.delta import apply_delta
 from lookml_agentops.seed.generator import generate
 from lookml_agentops.seed.loaders.duckdb_loader import load_duckdb
 from lookml_agentops.seed.writer import write_csvs
@@ -23,6 +24,7 @@ class SeedManifest(BaseModel):
     seed: int
     scale: float
     as_of: dt.date
+    deltas: list[str] = []
     tables: dict[str, TableStat]
     content_hash: str
 
@@ -35,8 +37,11 @@ def run_seed(
     csv_dir: Path,
     duckdb_path: Path | None,
     manifest_path: Path | None,
+    deltas: list[str] | None = None,
 ) -> SeedManifest:
     result = generate(seed, as_of, scale)
+    for name in deltas or []:
+        apply_delta(result, name, seed, as_of)
     rendered = write_csvs(result.tables, csv_dir)
     stats = {
         name: TableStat(rows=rows, sha256=sha256_bytes(data))
@@ -44,7 +49,12 @@ def run_seed(
     }
     content_hash = sha256_obj({k: v.sha256 for k, v in sorted(stats.items())})
     manifest = SeedManifest(
-        seed=seed, scale=scale, as_of=as_of, tables=stats, content_hash=content_hash
+        seed=seed,
+        scale=scale,
+        as_of=as_of,
+        deltas=list(deltas or []),
+        tables=stats,
+        content_hash=content_hash,
     )
     if duckdb_path is not None:
         load_duckdb(csv_dir, duckdb_path)

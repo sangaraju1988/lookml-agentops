@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS elements (run_id VARCHAR, element_id VARCHAR, kind VA
 CREATE TABLE IF NOT EXISTS results (
   run_id VARCHAR, test_id VARCHAR, agent VARCHAR, kind VARCHAR, status VARCHAR, mode VARCHAR,
   checks JSON, details JSON, tags JSON, rule_ids JSON, test_hash VARCHAR, answer JSON,
-  gt_hash VARCHAR, baseline_gt_hash VARCHAR, deps JSON
+  gt_hash VARCHAR, baseline_gt_hash VARCHAR, deps JSON, question VARCHAR
 );
 CREATE TABLE IF NOT EXISTS baselines (test_id VARCHAR PRIMARY KEY, gt_hash VARCHAR, run_id VARCHAR);
 """
@@ -177,7 +177,7 @@ class History:
             ],
         )
         self.con.executemany(
-            "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 [
                     run_id,
@@ -195,6 +195,7 @@ class History:
                     r.gt_hash,
                     r.baseline_gt_hash,
                     json.dumps(r.deps),
+                    r.question,
                 ]
                 for r in rec.results
             ],
@@ -247,6 +248,7 @@ class History:
                 gt_hash=r[12],
                 baseline_gt_hash=r[13],
                 deps=json.loads(r[14]),
+                question=r[15] or "",
             )
             for r in self.con.execute(
                 "SELECT * FROM results WHERE run_id = ? ORDER BY agent, test_id", [run_id]

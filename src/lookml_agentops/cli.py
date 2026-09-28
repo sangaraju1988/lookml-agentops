@@ -56,6 +56,10 @@ def seed(
     config: ConfigOpt = None,
     scale: Annotated[float | None, typer.Option(help="Override seed.scale")] = None,
     no_duckdb: Annotated[bool, typer.Option("--no-duckdb", help="Only write CSVs")] = False,
+    delta: Annotated[
+        list[str] | None,
+        typer.Option(help="Apply a seed delta (late-refunds) on top of the base data"),
+    ] = None,
 ) -> None:
     """Generate the deterministic Harborline dataset (CSVs + DuckDB)."""
     from lookml_agentops.seed.run import run_seed
@@ -68,6 +72,7 @@ def seed(
         csv_dir=cfg.path(cfg.seed.out_dir),
         duckdb_path=None if no_duckdb else cfg.path(cfg.seed.duckdb),
         manifest_path=cfg.path(cfg.seed.manifest),
+        deltas=list(delta) if delta else None,
     )
     width = max(len(n) for n in manifest.tables)
     for name, stat in sorted(manifest.tables.items()):
@@ -254,6 +259,161 @@ def diagnose_run(
     bad = {"fail", "error"} | ({"degraded"} if fail_on == "degraded" else set())
     if fail_on != "never" and any(r.status in bad for r in rec.results):
         raise typer.Exit(1)
+
+
+def _two_runs(cfg: LkagentConfig, run_a: str | None, run_b: str | None):  # type: ignore[no-untyped-def]
+    from lookml_agentops.diagnose.history import History
+
+    with History(cfg.path(cfg.diagnose.history)) as h:
+        ids = h.run_ids()
+        if not (run_a and run_b) and len(ids) < 2:
+            typer.echo("need at least two recorded runs (lkagent diagnose run)", err=True)
+            raise typer.Exit(2)
+        b_id = run_b or ids[-1]
+        try:
+            a_id = run_a or ids[ids.index(b_id) - 1]
+            return h.load(a_id), h.load(b_id)
+        except (KeyError, ValueError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(2) from exc
+
+
+@diagnose_app.command("why")
+def diagnose_why(
+    run_a: Annotated[
+        str | None, typer.Argument(help="Earlier run (default: the one before RUN_B)")
+    ] = None,
+    run_b: Annotated[str | None, typer.Argument(help="Later run (default: latest)")] = None,
+    config: ConfigOpt = None,
+    fmt: Annotated[str, typer.Option("--format", "-f", help="text | json")] = "text",
+) -> None:
+    """Attribute every changed test outcome to an input and its owner."""
+    from lookml_agentops._util.hashing import canonical_json
+    from lookml_agentops.diagnose.why import diagnose, render_text
+    from lookml_agentops.inputs.declared import load_owners
+
+    cfg = _cfg(config)
+    a, b = _two_runs(cfg, run_a, run_b)
+    d = diagnose(a, b, load_owners(cfg))
+    typer.echo(
+        canonical_json(d.model_dump(mode="json")) if fmt == "json" else render_text(d), nl=False
+    )
+
+
+@diagnose_app.command("impact")
+def diagnose_impact(
+    config: ConfigOpt = None,
+    base: Annotated[
+        str | None, typer.Option(help="Git ref of the base state (monorepo layout)")
+    ] = None,
+    head: Annotated[
+        str | None, typer.Option(help="Git ref of the head state (default: working tree)")
+    ] = None,
+    base_config: Annotated[
+        Path | None, typer.Option(help="lkagent.yaml of a base checkout (instead of --base)")
+    ] = None,
+    run: Annotated[
+        bool, typer.Option("--run", help="Run only the affected tests on the head state")
+    ] = False,
+    fmt: Annotated[str, typer.Option("--format", "-f", help="text | json")] = "text",
+) -> None:
+    """Predict which agents and tests a change affects (any project, spec, catalog or suite)."""
+    import contextlib
+
+    from lookml_agentops._util.hashing import canonical_json
+    from lookml_agentops.diagnose.impact import ImpactError, analyze, config_at_ref, render_text
+    from lookml_agentops.diagnose.run import RunOptions, run_diagnose
+    from lookml_agentops.diagnose.summary import render_summary
+    from lookml_agentops.generate.compile import CompileError
+
+    cfg = _cfg(config)
+    if not base and not base_config:
+        typer.echo("give --base REF or --base-config PATH", err=True)
+        raise typer.Exit(2)
+    try:
+        with contextlib.ExitStack() as stack:
+            base_cfg = (
+                _cfg(base_config)
+                if base_config
+                else stack.enter_context(config_at_ref(cfg, base or "HEAD"))
+            )
+            head_cfg = stack.enter_context(config_at_ref(cfg, head)) if head else cfg
+            report = analyze(
+                base_cfg,
+                head_cfg,
+                base_label=base or str(base_config),
+                head_label=head or "working tree",
+            )
+            typer.echo(
+                canonical_json(report.model_dump(mode="json"))
+                if fmt == "json"
+                else render_text(report),
+                nl=False,
+            )
+            if run and report.test_ids():
+                rec = run_diagnose(
+                    head_cfg, RunOptions(tests=report.test_ids(), label=f"impact {report.base}")
+                )
+                typer.echo(render_summary(rec), nl=False)
+    except (ImpactError, CompileError) as exc:
+        typer.echo(f"diagnose impact: {exc}", err=True)
+        raise typer.Exit(2) from exc
+
+
+@diagnose_app.command("bundle")
+def diagnose_bundle(
+    run_a: Annotated[str, typer.Argument(help="Run before the change")],
+    run_b: Annotated[str, typer.Argument(help="Run after the change")],
+    config: ConfigOpt = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o", help="Zip path")] = None,
+    all_changes: Annotated[
+        bool, typer.Option("--all", help="Include non-external verdicts too")
+    ] = False,
+) -> None:
+    """Write a vendor-support evidence zip (structure and fingerprints only, no row data)."""
+    from lookml_agentops.diagnose.bundle import build_bundle, write_bundle
+    from lookml_agentops.diagnose.why import diagnose
+    from lookml_agentops.inputs.declared import load_owners
+
+    cfg = _cfg(config)
+    a, b = _two_runs(cfg, run_a, run_b)
+    d = diagnose(a, b, load_owners(cfg))
+    path = output or cfg.path(f".lkagent/bundles/{run_a}-{run_b}.zip")
+    write_bundle(path, build_bundle(a, b, d, only_external=not all_changes))
+    n = sum(1 for v in d.verdicts if all_changes or v.cause == "external")
+    typer.echo(f"wrote {path} ({n} test(s))")
+
+
+@app.command()
+def demo(
+    workdir: Annotated[Path, typer.Option(help="Scratch directory (recreated)")] = Path(
+        "lkagent-demo"
+    ),
+    source: Annotated[
+        Path | None,
+        typer.Option(help="Example project to copy (default: bundled Harborline example)"),
+    ] = None,
+) -> None:
+    """Offline demo: external, LookML, spec and data changes, each attributed with an owner."""
+    from lookml_agentops.demo import run_demo
+
+    res = run_demo(source or _find_example(), workdir.resolve(), log=typer.echo)
+    if not res.ok:
+        for p in res.problems:
+            typer.echo(f"demo check failed: {p}", err=True)
+        raise typer.Exit(1)
+    typer.echo(
+        "demo OK: external, LookML, spec and data changes were attributed to the right owners"
+    )
+
+
+def _find_example() -> Path:
+    for d in (Path.cwd(), *Path.cwd().parents):
+        cand = d / "examples" / "harborline" / "lkagent.yaml"
+        if cand.exists():
+            return cand.parent
+    typer.echo("could not find examples/harborline; pass --source", err=True)
+    raise typer.Exit(2)
 
 
 if __name__ == "__main__":  # pragma: no cover

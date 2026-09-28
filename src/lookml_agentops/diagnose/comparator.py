@@ -30,6 +30,7 @@ class TestResult(BaseModel):
     test_id: str
     agent: str
     kind: str
+    question: str = ""
     status: Status
     mode: Literal["structural", "result_only"]
     checks: dict[str, bool | None] = Field(default_factory=dict)
@@ -113,6 +114,7 @@ def compare(
     res = TestResult(
         test_id=t.id,
         agent=t.agent,
+        question=t.question,
         kind=t.kind,
         status="pass",
         mode="structural" if structured else "result_only",
