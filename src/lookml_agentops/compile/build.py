@@ -16,8 +16,8 @@ from lookml_agentops.compile.generate import compile_agent, finalize
 from lookml_agentops.compile.schema import AgentInstructions
 from lookml_agentops.compile.testgen import generate_tests
 from lookml_agentops.config import LkagentConfig
-from lookml_agentops.lookml.resolve import load_workspace, resolve_project
-from lookml_agentops.verify.models import TestFile
+from lookml_agentops.lookml.resolve import EffectiveModel, load_workspace, resolve_project
+from lookml_agentops.verify.models import TestCase, TestFile
 
 BUILD_SCHEMA = "lkagent.build.v1"
 
@@ -30,20 +30,36 @@ class BuildResult:
     warnings: list[str] = field(default_factory=list)
 
 
-def compile_all(cfg: LkagentConfig, out_dir: Path | None = None) -> BuildResult:
-    out = out_dir or cfg.path(cfg.compile.out_dir)
+@dataclass
+class CompiledAgent:
+    instructions: AgentInstructions
+    tests: list[TestCase]
+    model: EffectiveModel
+
+
+def compile_agents(cfg: LkagentConfig) -> dict[str, CompiledAgent]:
+    """Compile every spoke in memory (used by ``compile`` and ``verify``)."""
     ws = load_workspace(cfg)
     catalog = load_catalog(cfg)
     hub_model = resolve_project(ws, cfg.hub)
-    agents: dict[str, AgentInstructions] = {}
-    files: list[Path] = []
-    warnings: list[str] = []
-    manifest_agents: dict[str, object] = {}
+    out: dict[str, CompiledAgent] = {}
     for spoke in cfg.spokes:
         em = resolve_project(ws, spoke)
         instr = compile_agent(hub=cfg.hub, em=em, hub_model=hub_model, catalog=catalog)
         tests = generate_tests(instr, em)
         finalize(instr)
+        out[spoke] = CompiledAgent(instr, tests, em)
+    return out
+
+
+def compile_all(cfg: LkagentConfig, out_dir: Path | None = None) -> BuildResult:
+    out = out_dir or cfg.path(cfg.compile.out_dir)
+    agents: dict[str, AgentInstructions] = {}
+    files: list[Path] = []
+    warnings: list[str] = []
+    manifest_agents: dict[str, object] = {}
+    for spoke, ca in compile_agents(cfg).items():
+        instr, tests = ca.instructions, ca.tests
         agents[spoke] = instr
         ca_json, ca_warn = export_ca(instr)
         warnings += ca_warn

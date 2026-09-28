@@ -64,6 +64,7 @@ class Expectation(_M):
 
 
 class TestCase(_M):
+    __test__ = False  # not a pytest class
     id: str
     question: str
     spoke: str
@@ -74,6 +75,7 @@ class TestCase(_M):
 
 
 class TestFile(_M):
+    __test__ = False
     version: int = 1
     tests: list[TestCase]
 

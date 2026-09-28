@@ -174,5 +174,77 @@ def compile_cmd(
     typer.echo(f"wrote {len(result.files)} files to {result.out_dir}")
 
 
+@app.command()
+def verify(
+    config: ConfigOpt = None,
+    runner: Annotated[str, typer.Option(help="mock | ca | mcp")] = "",
+    profile: Annotated[
+        str, typer.Option(help="Mock vendor profile (v1, v2_fuzzy_values, ...)")
+    ] = "",
+    nightly: Annotated[
+        bool, typer.Option("--nightly", help="All spokes, all tests (default)")
+    ] = False,
+    hub_pr: Annotated[
+        str | None, typer.Option("--hub-pr", help="Run every spoke against the hub at BRANCH")
+    ] = None,
+    spoke_pr: Annotated[
+        tuple[str, str] | None,
+        typer.Option("--spoke-pr", help="SPOKE BRANCH: run one spoke at BRANCH"),
+    ] = None,
+    spoke: Annotated[list[str] | None, typer.Option(help="Limit to these spokes")] = None,
+    label: Annotated[str | None, typer.Option(help="Free-text label stored with the run")] = None,
+    golden_only: Annotated[
+        bool, typer.Option("--golden-only", help="Skip adherence tests")
+    ] = False,
+    no_record: Annotated[
+        bool, typer.Option("--no-record", help="Do not write run history")
+    ] = False,
+    fail_on: Annotated[str, typer.Option(help="fail | degraded | never")] = "fail",
+) -> None:
+    """Run golden + adherence tests through a runner and record the run."""
+    from lookml_agentops.verify.modes import ModeError, project_at_branch
+    from lookml_agentops.verify.run import VerifyOptions, run_verify
+    from lookml_agentops.verify.summary import render_summary
+
+    cfg = _cfg(config)
+    opts = VerifyOptions(
+        runner=runner or cfg.verify.runner,
+        profile=profile or cfg.verify.vendor_profile,
+        mode="nightly",
+        spokes=list(spoke) if spoke else None,
+        label=label,
+        include_adherence=not golden_only,
+        record=not no_record,
+    )
+
+    def log(msg: str) -> None:
+        typer.echo(msg, err=True)
+
+    try:
+        if hub_pr and spoke_pr:
+            raise typer.BadParameter("use either --hub-pr or --spoke-pr")
+        if hub_pr:
+            opts.mode = f"hub-pr:{hub_pr}"
+            with project_at_branch(cfg, cfg.hub, hub_pr) as pr_cfg:
+                rec = run_verify(pr_cfg, opts, golden_cfg=cfg, log=log)
+        elif spoke_pr:
+            sp, branch = spoke_pr
+            if sp not in cfg.spokes:
+                raise typer.BadParameter(f"unknown spoke {sp!r}")
+            opts.mode = f"spoke-pr:{sp}:{branch}"
+            opts.spokes = [sp]
+            with project_at_branch(cfg, sp, branch) as pr_cfg:
+                rec = run_verify(pr_cfg, opts, golden_cfg=cfg, log=log)
+        else:
+            rec = run_verify(cfg, opts, log=log)
+    except ModeError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(2) from exc
+    typer.echo(render_summary(rec), nl=False)
+    bad = {"fail", "error"} | ({"degraded"} if fail_on == "degraded" else set())
+    if fail_on != "never" and any(r.status in bad for r in rec.results):
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()
