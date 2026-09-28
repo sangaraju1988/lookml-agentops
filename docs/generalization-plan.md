@@ -73,4 +73,7 @@
 ## 5. Open questions
 
 1. **R7 publish/rollback.** The DataAgent resource has `stagingContext`, `publishedContext` and output-only `lastPublishedContext`. The documented methods are `create/createSync/patch/updateSync/get/list/delete/deleteSync` and IAM only, with **no publish method**. Updating staging (`updateSync` + `updateMask`) and chatting against it (`dataAgentContext.contextVersion: STAGING`) are documented. Whether "publish" means writing `published_context` with `updateSync` isn't stated. I'm treating this as unclear and asking before implementing publish/rollback (see R7).
+   **Status:** R7 implements the confirmed half (stage with preserved `published_context`, validate
+   against STAGING, pass-rate gate, record). Publish and rollback raise `PublishNotConfirmed`
+   pending your decision.
 2. **Looker UI instruction format.** The UI's context types differ from the API's. The `looker-ui` exporter lists what doesn't translate, based on the Looker data-agent docs.

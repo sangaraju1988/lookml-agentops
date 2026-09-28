@@ -71,7 +71,20 @@ lkagent diagnose run --runner ca
 If the runner's responses don't expose the generated Looker query, tests are compared on
 **results only**, and reports say so. See [api-verification.md](api-verification.md).
 
-## 6. CI for any project
+## 6. Staged deploy
+
+```bash
+export LOOKER_INSTANCE_URI=https://<instance>.looker.app
+lkagent generate deploy finance-analyst --stage-only
+```
+
+This writes `build/finance-analyst/ca_context.json` into the data agent's `staging_context`
+(sending the current `published_context` back unchanged), runs the agent's tests against staging
+(`contextVersion: STAGING`), and records the result in `.lkagent/deployments.json`. Promotion to
+production isn't automated yet, because the CA API documents no publish or rollback operation.
+Publish from the Looker/CA UI after a green staged run.
+
+## 7. CI for any project
 
 Copy `.github/workflows/pr.yml` into each repo, pointing `LKAGENT_CONFIG` at your config. On a PR
 to a project that others import, `lkagent diagnose impact --base origin/main --run` tests every

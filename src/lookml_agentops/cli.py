@@ -260,6 +260,69 @@ def generate_resolve_golden(config: ConfigOpt = None) -> None:
     typer.echo(f"resolved {len(report['resolved'])} URL(s); {len(report['cached'])} already cached")
 
 
+@generate_app.command("deploy")
+def generate_deploy(
+    agent: Annotated[str, typer.Argument(help="Agent id to deploy")],
+    config: ConfigOpt = None,
+    stage_only: Annotated[
+        bool, typer.Option("--stage-only", help="Write staging and validate; do not publish")
+    ] = False,
+) -> None:
+    """Stage compiled context on the CA data agent, validate it with diagnose, then publish ([ca])."""
+    from lookml_agentops.generate.deploy import (
+        DeployError,
+        PublishNotConfirmed,
+        client_from_env,
+        deploy,
+        staging_runner,
+    )
+
+    cfg = _cfg(config)
+    try:
+        client = client_from_env(cfg)
+        try:
+            res = deploy(
+                cfg,
+                agent,
+                client=client,
+                run_against_staging=staging_runner,
+                publish=not stage_only,
+            )
+        finally:
+            client.close()
+    except PublishNotConfirmed as exc:
+        typer.echo(f"staged and validated, but not published: {exc}", err=True)
+        raise typer.Exit(3) from exc
+    except DeployError as exc:
+        typer.echo(f"deploy: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    typer.echo(
+        f"{agent}: staged (context {res.context_hash}); pass rate {res.pass_rate:.1%} "
+        f"(threshold {res.threshold:.1%}); published={res.published}"
+    )
+    for n in res.notes:
+        typer.echo(f"  {n}")
+    if not res.published and not stage_only:
+        raise typer.Exit(1)
+
+
+@generate_app.command("rollback")
+def generate_rollback(
+    agent: Annotated[str, typer.Argument(help="Agent id to roll back")],
+    config: ConfigOpt = None,
+) -> None:
+    """Restore the last published context (pending API confirmation; see docs/api-verification.md)."""
+    from lookml_agentops.generate.deploy import PublishNotConfirmed, UnconfirmedPublish
+
+    cfg = _cfg(config)
+    if agent not in cfg.diagnose.ca.agents:
+        typer.echo(f"rollback: no CA data agent configured for {agent}", err=True)
+        raise typer.Exit(2)
+    # TODO(verify-api): the CA API documents no publish/rollback operation; see deploy.py.
+    typer.echo(f"rollback: {PublishNotConfirmed(UnconfirmedPublish.MESSAGE)}", err=True)
+    raise typer.Exit(3)
+
+
 @diagnose_app.command("run")
 def diagnose_run(
     config: ConfigOpt = None,
