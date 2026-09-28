@@ -60,7 +60,7 @@ def render_sarif(result: LintResult, cfg: LkagentConfig, base: Path) -> dict[str
                     "driver": {
                         "name": "lkagent",
                         "version": __version__,
-                        "informationUri": "https://github.com/lookml-agentops/lookml-agentops",
+                        "informationUri": "https://github.com/sangaraju1988/lookml-agentops",
                         "rules": rules,
                     }
                 },
