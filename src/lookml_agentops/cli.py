@@ -156,6 +156,60 @@ def generate_lint(
         raise typer.Exit(1)
 
 
+@generate_app.command("new")
+def generate_new(
+    agent: Annotated[str, typer.Argument(help="New agent id, e.g. finance-analyst")],
+    config: ConfigOpt = None,
+    description: Annotated[
+        str | None,
+        typer.Option("--description", "-d", help="Plain-English description (prompted if omitted)"),
+    ] = None,
+    explore: Annotated[
+        list[str] | None, typer.Option(help="Explore as <project>::<explore> (repeatable)")
+    ] = None,
+    extends: Annotated[
+        list[str] | None, typer.Option(help="Spec to extend, relative to the new file")
+    ] = None,
+    provider: Annotated[str, typer.Option(help="stub | command (LKAGENT_LLM_COMMAND)")] = "stub",
+    output: Annotated[
+        Path | None, typer.Option("--output", "-o", help="Default: agents/<agent>.agent.md")
+    ] = None,
+    force: Annotated[bool, typer.Option("--force", help="Overwrite an existing file")] = False,
+) -> None:
+    """Draft a *.agent.md with an LLM (or the offline stub), grounded in the model; then lint it."""
+    from lookml_agentops.generate.compile import bind_all
+    from lookml_agentops.generate.draft import (
+        CommandProvider,
+        DraftError,
+        DraftRequest,
+        StubProvider,
+        draft_spec,
+    )
+
+    cfg = _cfg(config)
+    desc = description or typer.prompt("Describe the agent (audience, definitions, exclusions)")
+    explores = list(explore or [])
+    if not explores:
+        explores = [
+            e.strip()
+            for e in typer.prompt("Explores (<project>::<explore>, comma-separated)").split(",")
+        ]
+    out = output or cfg.path(f"agents/{agent}.agent.md")
+    try:
+        prov = StubProvider() if provider == "stub" else CommandProvider()
+        path = draft_spec(
+            cfg, DraftRequest(agent, desc, explores, list(extends or [])), prov, out, force=force
+        )
+    except DraftError as exc:
+        typer.echo(f"generate new: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    typer.echo(f"wrote {path} (draft from the {prov.name} provider; review before committing)")
+    findings = [f for f in bind_all(cfg).findings if f.file.endswith(path.name)]
+    for f in findings:
+        typer.echo(f"  {f.severity.upper():<7} {f.rule_id}  {f.file}:{f.line}  {f.message}")
+    typer.echo(f"lint: {len(findings)} finding(s) in the draft")
+
+
 @generate_app.command("compile")
 def generate_compile(
     config: ConfigOpt = None,
@@ -382,6 +436,37 @@ def diagnose_bundle(
     write_bundle(path, build_bundle(a, b, d, only_external=not all_changes))
     n = sum(1 for v in d.verdicts if all_changes or v.cause == "external")
     typer.echo(f"wrote {path} ({n} test(s))")
+
+
+@diagnose_app.command("report")
+def diagnose_report(
+    config: ConfigOpt = None,
+    run: Annotated[str | None, typer.Option(help="Run to report on (default: latest)")] = None,
+    base: Annotated[
+        str | None, typer.Option(help="Attribution base (default: previous run)")
+    ] = None,
+    trend: Annotated[int, typer.Option(help="Number of runs in the trend")] = 10,
+    fmt: Annotated[str, typer.Option("--format", "-f", help="md | html | both")] = "both",
+    out_dir: Annotated[
+        Path | None, typer.Option(help="Output directory (default: reports/)")
+    ] = None,
+) -> None:
+    """Write report.md (PR-comment sized) and/or a self-contained report.html, grouped by owner."""
+    from lookml_agentops.diagnose.history import History
+    from lookml_agentops.inputs.declared import load_owners
+    from lookml_agentops.report.build import write_reports
+    from lookml_agentops.report.data import build_report_data
+
+    cfg = _cfg(config)
+    formats = ("md", "html") if fmt == "both" else (fmt,)
+    with History(cfg.path(cfg.diagnose.history)) as h:
+        try:
+            data = build_report_data(h, load_owners(cfg), head=run, base=base, trend=trend)
+        except (ValueError, KeyError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(2) from exc
+    for p in write_reports(data, out_dir or cfg.path("reports"), formats):
+        typer.echo(f"wrote {p}")
 
 
 @app.command()

@@ -17,7 +17,7 @@ def render_summary(rec: RunRecord, *, show: int = 40) -> str:
         by_agent.setdefault(r.agent, Counter())[r.status] += 1
     for agent, c in sorted(by_agent.items()):
         checkable = sum(v for k, v in c.items() if k != "skipped")
-        rate = 100.0 * c["pass"] / checkable if checkable else 0.0
+        rate = 100.0 * (c["pass"] + c["drift"]) / checkable if checkable else 0.0
         parts = "  ".join(f"{s}={c[s]}" for s in STATUSES if c[s])
         lines.append(f"  {agent:<20} {rate:5.1f}% pass  ({parts})")
     bad = [r for r in rec.results if r.status not in ("pass", "skipped")]

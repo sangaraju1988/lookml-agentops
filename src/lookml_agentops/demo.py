@@ -21,12 +21,14 @@ from pathlib import Path
 
 from lookml_agentops.config import LkagentConfig, load_config
 from lookml_agentops.diagnose.bundle import build_bundle, write_bundle
-from lookml_agentops.diagnose.history import RunRecord
+from lookml_agentops.diagnose.history import History, RunRecord
 from lookml_agentops.diagnose.impact import ImpactReport, analyze
 from lookml_agentops.diagnose.run import RunOptions, ensure_seed, run_diagnose
 from lookml_agentops.diagnose.why import Diagnosis, diagnose, headline
 from lookml_agentops.generate.compile import CompileError, compile_agents
 from lookml_agentops.inputs.declared import load_owners
+from lookml_agentops.report.build import write_reports
+from lookml_agentops.report.data import build_report_data
 from lookml_agentops.seed.run import run_seed
 
 LOOKML_EDIT = (
@@ -54,6 +56,7 @@ class DemoResult:
     impact: ImpactReport | None = None
     bundle: Path | None = None
     locked_error: str | None = None
+    reports: dict[str, list[Path]] = field(default_factory=dict)
     ok: bool = True
     problems: list[str] = field(default_factory=list)
 
@@ -201,4 +204,12 @@ def run_demo(source: Path, workdir: Path, log: Callable[[str], None] = print) ->
     _check(res, bool(d4.verdicts) and {v.cause for v in d4.verdicts} == {"data"}, "data: causes")
     _check(res, {v.after for v in d4.verdicts} == {"drift"}, "data: drift, not failure")
     _check(res, {v.owner for v in d4.verdicts} == {"data-engineering"}, "data: owner")
+
+    c = cfg()
+    with History(c.path(c.diagnose.history)) as h:
+        for name, rec in (("external", ext), ("lookml", lookml), ("spec", spec), ("data", data)):
+            rd = build_report_data(h, owners, head=rec.info.run_id, base=base.info.run_id)
+            res.reports[name] = write_reports(rd, workdir / "reports" / name)
+    for name, paths in res.reports.items():
+        log(f"  {name:<9} report: {paths[-1]}")
     return res

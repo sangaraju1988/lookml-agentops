@@ -1,0 +1,91 @@
+## lkagent diagnose — {{ d.head.run_id }}
+
+`{{ d.head.runner_version }}` · as_of {{ d.head.as_of }}{% if d.head.label %} · {{ d.head.label }}{% endif %}
+
+
+{% if d.result_only %}
+> ⚠️ This runner can't expose the explore, fields, or filters behind its answers. Tests were compared on **results only**, and structural checks were skipped.
+
+{% endif %}
+| Agent | Pass rate | Suite | Generated | ✅ pass | 🟡 degraded | 🔵 drift | 🔴 fail | ⚠️ error |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+{% for a in d.agents %}
+| {{ a.agent }} | **{{ "%.1f"|format(a.rate) }}%** | {{ "%.1f"|format(a.suite_rate) }}% | {{ "%.1f"|format(a.generated_rate) }}% | {{ a.passed }} | {{ a.degraded }} | {{ a.drift }} | {{ a.failed }} | {{ a.errors }} |
+{% endfor %}
+{% if d.diagnosis %}
+
+### Why answers changed (vs {{ d.diagnosis.run_a }})
+
+{% for line in d.headline %}
+- {{ line }}
+{% endfor %}
+{% for g in d.owners %}
+
+#### {{ g.owner }} ({{ g.total }})
+
+| Cause | Test | Before → after | Likely cause | Confidence |
+|---|---|---|---|---|
+{% for cause, vs in g.by_cause.items() %}
+{% for v in vs[:max_rows] %}
+| **{{ cause }}** | `{{ v.agent }}/{{ v.test_id }}` | {{ v.before }} → {{ v.after }} | {{ (v.likely_cause or "")|replace("|", "\\|") }} | {{ v.confidence }} |
+{% endfor %}
+{% if vs|length > max_rows %}
+| | … {{ vs|length - max_rows }} more | | | |
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if d.drift %}
+
+### 🔵 Data drift ({{ d.drift|length }})
+
+The expected answer itself moved, for example because of late-arriving refunds. These aren't agent regressions. Accept the new truth with `lkagent diagnose run --rebaseline`.
+{% endif %}
+{% if d.degraded %}
+
+### 🟡 Degraded: right result, wrong structure (these will fail later)
+
+{% for r in d.degraded[:max_rows] %}
+- `{{ r.agent }}/{{ r.test_id }}`: {{ r.details|join("; ") }}
+{% endfor %}
+{% endif %}
+{% set broken = d.elements|rejectattr("honored")|list %}
+
+### Spec adherence
+
+{{ d.elements|length - broken|length }} of {{ d.elements|length }} spec elements (rules, vocabulary, guardrails, golden queries) are honored.
+{% if broken %}
+
+| Element | Agent | Passing tests |
+|---|---|---:|
+{% for e in broken[:max_rows] %}
+| `{{ e.element }}` | {{ e.agent }} | {{ e.passing }}/{{ e.tests }} |
+{% endfor %}
+{% endif %}
+{% if d.failing %}
+
+<details><summary>🔴 {{ d.failing|length }} failing test(s)</summary>
+
+{% for r in d.failing %}
+- `{{ r.agent }}/{{ r.test_id }}`: {{ r.details|join("; ") }}
+{% endfor %}
+
+</details>
+{% endif %}
+{% if d.trend|length > 1 %}
+
+<details><summary>Trend (last {{ d.trend|length }} runs)</summary>
+
+| Run | Runner |{% for a in d.agents %} {{ a.agent }} |{% endfor %}
+
+|---|---|{% for a in d.agents %}---:|{% endfor %}
+
+{% for p in d.trend %}
+| {{ p.run_id }}{% if p.label %} ({{ p.label }}){% endif %} | `{{ p.runner }}` |{% for a in d.agents %} {{ "%.1f"|format(p.rates.get(a.agent, 0)) }}% |{% endfor %}
+
+{% endfor %}
+
+</details>
+{% endif %}
+
+<sub>lkagent {{ version }} · reports contain summaries and query structure only, never row-level data.</sub>

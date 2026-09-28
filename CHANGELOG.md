@@ -1,14 +1,18 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.2.0 (unreleased): generalized to any topology
 
-First MVP:
+- **Breaking:** `lkagent.yaml` version 2. Projects have no roles. New sections: `agents`,
+  `catalogs`, `suites`, `owners`, `diagnose`.
+- **Breaking:** the CLI is split into two modes, `lkagent generate {new, lint, compile,
+  resolve-golden}` and `lkagent diagnose {run, why, impact, bundle, report}`.
+- Team-authored `*.agent.md` specs with generic `extends` and `locked` rules; neutral
+  `agent_spec.v1`; exporters json / ca-api / looker-ui.
+- Tracked inputs with owners (`owners.yaml`), dependency tracing, field-level model diffs,
+  verdicts input / multiple / data / external, impact analysis, vendor evidence bundles.
+- History schema v2 (v1 files are moved aside automatically).
+- Example: four projects (including a standalone one), four agent specs, owners for six teams.
 
-- `lkagent seed`: deterministic Harborline Supply Co. dataset with documented traps
-- `lkagent graph`: LookML resolver (imports, includes, extends, refinements) with per-field provenance
-- `lkagent lint`: 19 rules; text, Markdown and SARIF output; inline exemptions
-- `lkagent compile`: `agent_instructions.v1`, hub/spoke layering, contradiction checks, adherence
-  tests, JSON and Conversational Analytics exporters
-- `lkagent verify`: MockRunner with three vendor profiles, CA and MCP runners, structural
-  comparator, DuckDB run history, PR modes
-- `lkagent attribute`, `lkagent report`, `lkagent demo`
+## 0.1.0
+
+First MVP with a fixed hub-and-spoke layout (superseded by 0.2.0).

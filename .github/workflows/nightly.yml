@@ -1,4 +1,4 @@
-# Nightly: verify every spoke, attribute changes against the previous night, publish a report.
+# Nightly: run every agent's tests, attribute changes against the previous night, publish a report.
 # Uses the Conversational Analytics runner when credentials are configured, otherwise the mock.
 name: nightly
 on:
@@ -38,33 +38,27 @@ jobs:
         id: runner
         env:
           GCP_TOKEN: ${{ steps.gcp.outputs.access_token }}
-          LOOKER_CLIENT_ID: ${{ secrets.LOOKER_CLIENT_ID }}
         run: |
-          if [ -n "$GCP_TOKEN" ] && [ -n "$LOOKER_CLIENT_ID" ]; then
-            echo "runner=ca" >> "$GITHUB_OUTPUT"
-          else
-            echo "runner=mock" >> "$GITHUB_OUTPUT"
-            echo "No CA credentials configured; using the MockRunner."
-          fi
+          if [ -n "$GCP_TOKEN" ]; then echo "runner=ca" >> "$GITHUB_OUTPUT"; else
+            echo "runner=mock" >> "$GITHUB_OUTPUT"; echo "No CA credentials configured; using the MockRunner."; fi
 
       - name: Seed synthetic warehouse (ground truth for the demo project)
         run: uv run lkagent seed -c "$LKAGENT_CONFIG"
 
-      - name: Verify
+      - name: Diagnose
         env:
           LKAGENT_CA_ACCESS_TOKEN: ${{ steps.gcp.outputs.access_token }}
           GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
           LOOKER_CLIENT_ID: ${{ secrets.LOOKER_CLIENT_ID }}
           LOOKER_CLIENT_SECRET: ${{ secrets.LOOKER_CLIENT_SECRET }}
         run: |
-          uv run lkagent verify -c "$LKAGENT_CONFIG" --nightly \
-            --runner "${{ steps.runner.outputs.runner }}" --label "nightly ${{ github.run_number }}" \
-            --fail-on never
+          uv run lkagent diagnose run -c "$LKAGENT_CONFIG" --runner "${{ steps.runner.outputs.runner }}" \
+            --label "nightly ${{ github.run_number }}" --fail-on never
 
       - name: Attribute and report
         run: |
-          uv run lkagent attribute -c "$LKAGENT_CONFIG" || echo "first recorded run; nothing to attribute"
-          uv run lkagent report -c "$LKAGENT_CONFIG" --out-dir reports
+          uv run lkagent diagnose why -c "$LKAGENT_CONFIG" || echo "first recorded run; nothing to attribute"
+          uv run lkagent diagnose report -c "$LKAGENT_CONFIG" --out-dir reports
           cat reports/report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save run history

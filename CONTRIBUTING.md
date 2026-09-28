@@ -15,7 +15,7 @@ uv run pre-commit install
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
 uv run pytest
-uv run lkagent compile -c examples/harborline --check   # generated artifacts are current
+uv run lkagent generate compile -c examples/harborline --check   # build/ is current
 ```
 
 ## Ground rules

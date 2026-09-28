@@ -3,7 +3,7 @@
 lookml-agentops never guesses vendor fields. Every field a real adapter uses is listed here with
 its source. Anything unconfirmed is marked `TODO(verify-api)` in code.
 
-_Last reviewed: 2026-09-27._
+_Last reviewed: 2026-09-28._
 
 ## Looker LookML semantics (used by the resolver)
 
@@ -20,7 +20,7 @@ _Last reviewed: 2026-09-27._
 | Explore `extends` inherits the parent's `view_name` | ⚠️ unverified, so our example explores set `view_name` explicitly | — |
 | `fiscal_month_offset` fiscal-year naming | ⚠️ unverified, so we avoid it and use a fiscal calendar table | — |
 
-## Conversational Analytics API (CA exporter, CARunner)
+## Conversational Analytics API (`generate/exporters/ca_api.py`, `diagnose/runners/ca.py`)
 
 | Fact | Status | Source |
 |---|---|---|
@@ -42,13 +42,44 @@ _Last reviewed: 2026-09-27._
 | Resolved filter values exposed in the response | ⚠️ TODO(verify-api), assumed **no** | — |
 | Auth for Looker datasources (credentials in request, OAuth, IAM roles) | ⚠️ TODO(verify-api) | authentication page not yet reviewed |
 
-## Looker managed MCP server (MCPRunner)
+### Authored context and agent lifecycle (for `generate compile` and staged deploy)
+
+| Fact | Status | Source |
+|---|---|---|
+| Authored context for Looker: `system_instruction`, `looker_golden_queries` (each `{natural_language_questions[], looker_query{model, explore, fields[], filters[{field, value}], sorts[], limit}}`), plus `glossaries` / `additional_descriptions` keys in the system-instruction YAML template | ✅ confirmed | authored-context doc (data-agent-authored-context-looker) |
+| Golden queries use the Looker query representation, not SQL or Explore URLs. A query is retrieved with `GET /queries/slug/{slug}`. | ✅ confirmed | same |
+| 30–50 golden queries recommended (no hard limit) | ✅ confirmed | same, and Looker data-agents doc |
+| CA doesn't generate queries with pivots | ✅ confirmed | Looker CA best practices |
+| Put field synonyms and descriptions in LookML rather than agent instructions | ✅ confirmed (drives lint LKS009) | Looker CA best practices |
+| Exact nesting of `glossaries` entries in the system-instruction YAML | ⚠️ TODO(verify-api): we follow the doc template (`- glossary: [{term}, {description}, {synonyms}]`) | authored-context doc |
+| Create `POST …/dataAgents:createSync`; update `PATCH …/dataAgents/{id}:updateSync?updateMask=…`; get; `DELETE …:deleteSync` | ✅ confirmed | build-agent-http doc |
+| Resource fields `stagingContext` ("used to test and validate changes before publishing"), `publishedContext` ("used by the Chat API in production"), `lastPublishedContext` ("output-only … populated by the system when the published context is updated") | ✅ confirmed | REST reference |
+| Methods: create, createSync, delete, deleteSync, get, getIamPolicy, list, listAccessible, patch, setIamPolicy, updateSync; **no publish method** | ✅ confirmed | REST reference |
+| How to *publish* staging → published, and how to roll back | ❌ not documented. See the R7 open question in `docs/generalization-plan.md`. | — |
+| Chat against staging: `dataAgentContext.contextVersion: STAGING` | ✅ confirmed (enum STAGING/PUBLISHED) | chat reference |
+
+## Looker UI agent editor (`generate/exporters/looker_ui.py`)
+
+| Fact | Status | Source |
+|---|---|---|
+| Fields: Agent name, Agent description, Explores (up to five), Instructions (free text; YAML or Markdown recommended), Verified queries (Question + Explore URL) | ✅ confirmed | Looker data-agents doc, best practices |
+| No glossary field in the UI | ✅ confirmed (not listed) | Looker data-agents doc |
+
+## Looker API (`generate/golden_resolve.py`)
+
+| Fact | Status | Source |
+|---|---|---|
+| `GET /queries/slug/{slug}` returns a Query with `model`, `view` (explore), `fields`, `pivots`, `filters`, `sorts`, `limit`, … | ✅ confirmed | Looker API reference `query_for_slug` |
+| `POST /login` issues access tokens from API credentials | ✅ confirmed | same |
+| Authorization header scheme and login form field names | ⚠️ TODO(verify-api): we send `Bearer <token>` and `client_id` / `client_secret` | — |
+
+## Looker managed MCP server (`diagnose/runners/mcp.py`)
 
 | Fact | Status | Source |
 |---|---|---|
 | Endpoint `<LOOKER_INSTANCE_URL>/mcp`, HTTP transport | ✅ confirmed | docs.cloud.google.com/looker/docs/mcp |
 | Auth: OAuth 2.1 with PKCE. Admins enable individual tools. | ✅ confirmed | same |
-| Tool names and input schemas | ⚠️ TODO(verify-api): not listed on that page. MCPRunner calls the tool named in `verify.mcp.tool` with `{question_arg: question}` plus configured args. | — |
+| Tool names and input schemas | ⚠️ TODO(verify-api): not listed on that page. MCPRunner calls the tool named in `diagnose.mcp.tool` with `{question_arg: question}` plus configured args. | — |
 | Python MCP SDK 2.2: `streamable_http_client(url, http_client=httpx2.AsyncClient)` yields `(read, write)`; `ClientSession.call_tool(name, arguments)` → `CallToolResult{content, structured_content, is_error}` | ✅ verified against the installed SDK | `mcp` 2.2.0 |
 
 ## MCP Toolbox for Databases (Looker source)
