@@ -28,3 +28,15 @@ def small_seed(tmp_path_factory: pytest.TempPathFactory) -> Path:
         manifest_path=None,
     )
     return db
+
+
+@pytest.fixture
+def example_copy(tmp_path: Path) -> Path:
+    """A writable copy of the Harborline example (LookML, catalog, golden, config; no seed data)."""
+    import shutil
+
+    dst = tmp_path / "harborline"
+    shutil.copytree(
+        EXAMPLE, dst, ignore=shutil.ignore_patterns("data", "*.duckdb", ".lkagent", "build")
+    )
+    return dst

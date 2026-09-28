@@ -1,0 +1,41 @@
+{
+  "agents": {
+    "finance_spoke": {
+      "content_hash": "8deb5622b03cfc630382733a9888caf37fdb2a972cee94fd215328e852a1698a",
+      "files": {
+        "agent_instructions.json": "b11d08107252b6edccdcb0f5b70b51955ffbbc0da1600c39b93e8864fbd811d1",
+        "ca_agent.json": "12e0d11a02979a12fbb057a4c8469df4116e1b7d70e5023b1b34e6024be098de",
+        "tests.generated.yaml": "bbbb75a247fba493371eee1319a4910147789eeaeb8ea1b4235a37f4dc3d7318"
+      },
+      "layers": {
+        "hub:core_hub": "05dd030d83d1e47c2be818c86035f939a26ff73f5e25d293d1eb57675e681cd7",
+        "spoke:finance_spoke": "4a5d6c05fe8c54b6593ec9aad5c7e69bd4e8c9bbab48d8c466640f44307059fc"
+      },
+      "rules": 30,
+      "tests": 43
+    },
+    "logistics_spoke": {
+      "content_hash": "52edf6e2045ec83b8bab614290a20cc361c903be9be27f5b0787aa1ac08839f9",
+      "files": {
+        "agent_instructions.json": "f3dc26061c599317f60b0b0a977698c164a28ace490ff45e00a369a1899c1c9a",
+        "ca_agent.json": "7402aa392da3b82a18fbb5e65b3bac39db354532217c6f41649108b77d509293",
+        "tests.generated.yaml": "5a89dadf001091cff03f6becadc6dbd2ea6233e2a35810b114a62f048d4889af"
+      },
+      "layers": {
+        "hub:core_hub": "fe60632fdab975b7c3533db387b28c3dcd12854f6e8efc51d926ddbb0bc98081",
+        "spoke:logistics_spoke": "cbd54d5d4a63a95fc88ffe62f4e87c399cb75a80e9a4ff0660189997a2d145db"
+      },
+      "rules": 30,
+      "tests": 48
+    }
+  },
+  "inputs": {
+    "catalog": "ba1ce0ab859c2acb03d37ba01556f4fe8b934692ec1dd64712d081d8acea85fe",
+    "projects": {
+      "core_hub": "7ca85af8a931febd811e6ec522c5953e0cd7ff3b63667ac3ab3a686131131eb7",
+      "finance_spoke": "1b3786f5ff36e71a5f616c5504af2b069e23ddc337ad0e99290919f5fb41466c",
+      "logistics_spoke": "ddfb82035076cb07f91688fdc30c198166b3cbddcced95f83c933d1afae36c79"
+    }
+  },
+  "schema": "lkagent.build.v1"
+}

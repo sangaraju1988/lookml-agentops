@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from lookml_agentops.config import LkagentConfig
-from lookml_agentops.lookml.model import AccessGrant, LExplore, LField, LJoin, LView, Prov
+from lookml_agentops.lookml.model import AccessGrant, LExplore, LField, LJoin, Loc, LView, Prov
 from lookml_agentops.lookml.parse import ParsedFile, parse_file
 
 ADDITIVE_FIELD_PARAMS = ("link", "filters", "action")
@@ -102,6 +102,7 @@ class EffectiveModel:
     access_grants: dict[str, AccessGrant]
     imports: list[str]
     problems: list[str] = field(default_factory=list)
+    explore_defs: dict[str, Loc] = field(default_factory=dict)  # base definition location
 
     def field(self, view: str, name: str) -> LField | None:
         v = self.views.get(view)
@@ -109,6 +110,16 @@ class EffectiveModel:
 
     def queryable_explores(self) -> list[LExplore]:
         return [e for _, e in sorted(self.explores.items()) if not e.extension_required]
+
+    def ancestors(self, name: str) -> list[str]:
+        """``name`` followed by every explore it extends (depth-first, declaration order)."""
+        out = [name]
+        e = self.explores.get(name)
+        for parent in e.extends if e is not None else []:
+            for a in self.ancestors(parent):
+                if a not in out:
+                    out.append(a)
+        return out
 
     def explore_views(self, explore: LExplore) -> dict[str, LView]:
         """alias -> view for an explore (skips aliases whose view is missing)."""
@@ -173,6 +184,7 @@ class _Resolver:
         view_refs: dict[str, list[LView]] = {}
         explore_refs: dict[str, list[LExplore]] = {}
         grants: dict[str, AccessGrant] = {}
+        explore_defs: dict[str, Loc] = {}
         for proj, rel in order:
             pf = self.ws.projects[proj].files[rel]
             for v in pf.views:
@@ -191,6 +203,7 @@ class _Resolver:
                     )
                 else:
                     base_explores[e.name] = e.clone()
+                    explore_defs[e.name] = e.provenance[0].loc
             if pf.kind == "model" and proj == self.project.name:
                 for g in pf.access_grants:
                     grants[g.name] = g
@@ -228,6 +241,7 @@ class _Resolver:
             access_grants=grants,
             imports=self.project.dependencies,
             problems=self.problems,
+            explore_defs=explore_defs,
         )
 
     def _extend_view(

@@ -130,5 +130,49 @@ def lint(
         raise typer.Exit(1)
 
 
+@app.command(name="compile")
+def compile_cmd(
+    config: ConfigOpt = None,
+    check: Annotated[
+        bool, typer.Option("--check", help="Fail if committed build artifacts are stale")
+    ] = False,
+    polish: Annotated[
+        bool, typer.Option("--polish", help="Polish rule prose with an LLM (not configured)")
+    ] = False,
+) -> None:
+    """Compile layered agent instructions, CA agent bodies and adherence tests into build/."""
+    from lookml_agentops.compile.build import check_build, compile_all
+    from lookml_agentops.compile.generate import CompileError
+
+    cfg = _cfg(config)
+    if polish:
+        typer.echo(
+            "--polish: no polisher is configured in this build. The unpolished output is the "
+            "source of truth; see lookml_agentops.compile.polish for the interface.",
+            err=True,
+        )
+        raise typer.Exit(2)
+    try:
+        if check:
+            stale = check_build(cfg)
+            if stale:
+                typer.echo("stale build artifacts (run `lkagent compile`):", err=True)
+                for s in stale:
+                    typer.echo(f"  {s}", err=True)
+                raise typer.Exit(1)
+            typer.echo("build artifacts are up to date")
+            return
+        result = compile_all(cfg)
+    except CompileError as exc:
+        typer.echo(f"compile error:\n{exc}", err=True)
+        raise typer.Exit(1) from exc
+    for w in result.warnings:
+        typer.echo(f"warning: {w}", err=True)
+    for spoke, instr in sorted(result.agents.items()):
+        n = {layer.layer_id: len(layer.rules) for layer in instr.layers}
+        typer.echo(f"{spoke}: {n} content_hash={instr.content_hash[:12]}")
+    typer.echo(f"wrote {len(result.files)} files to {result.out_dir}")
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

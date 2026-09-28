@@ -1,0 +1,1262 @@
+{
+  "agent_id": "finance_spoke",
+  "content_hash": "8deb5622b03cfc630382733a9888caf37fdb2a972cee94fd215328e852a1698a",
+  "explores": [
+    {
+      "default_time_field": "invoices.invoice",
+      "description": "Recognized revenue by invoice date, and collections (DSO).",
+      "explore": "finance_invoices",
+      "extends_chain": [
+        "invoices_base"
+      ],
+      "fiscal_alias": "invoice_fiscal",
+      "label": "Finance: Invoices & Collections"
+    },
+    {
+      "default_time_field": "orders.created",
+      "description": "Finance view of orders: net, gross revenue, refunds and customers by fiscal period.",
+      "explore": "finance_orders",
+      "extends_chain": [
+        "orders_base"
+      ],
+      "fiscal_alias": "created_fiscal",
+      "label": "Finance: Orders & Revenue"
+    }
+  ],
+  "layers": [
+    {
+      "content_hash": "05dd030d83d1e47c2be818c86035f939a26ff73f5e25d293d1eb57675e681cd7",
+      "example_questions": [
+        {
+          "explore": "invoices_base",
+          "fields": [
+            "invoices.recognized_revenue",
+            "invoice_fiscal.fiscal_quarter_label"
+          ],
+          "filters": {},
+          "question": "Show Recognized Revenue by fiscal quarter"
+        },
+        {
+          "explore": "orders_base",
+          "fields": [
+            "orders.active_customer_count",
+            "created_fiscal.fiscal_quarter_label"
+          ],
+          "filters": {},
+          "question": "Show Active Customers by fiscal quarter"
+        },
+        {
+          "explore": "orders_base",
+          "fields": [
+            "orders.gross_revenue",
+            "created_fiscal.fiscal_quarter_label"
+          ],
+          "filters": {},
+          "question": "Show Gross Revenue by fiscal quarter"
+        },
+        {
+          "explore": "orders_base",
+          "fields": [
+            "orders.net_revenue",
+            "created_fiscal.fiscal_quarter_label"
+          ],
+          "filters": {},
+          "question": "Show Net Revenue by fiscal quarter"
+        },
+        {
+          "explore": "orders_base",
+          "fields": [
+            "orders.order_count",
+            "created_fiscal.fiscal_quarter_label"
+          ],
+          "filters": {},
+          "question": "Show Order Count by fiscal quarter"
+        }
+      ],
+      "field_guidance": [
+        {
+          "description": "Legal name of the customer company.",
+          "field": "customers.company_name",
+          "kind": "dimension",
+          "label": "Customer Name",
+          "tags": [
+            "glossary:customer"
+          ],
+          "usages": [
+            "customers.company_name"
+          ]
+        },
+        {
+          "description": "Enterprise, Mid-Market or SMB.",
+          "field": "customers.segment",
+          "kind": "dimension",
+          "label": "Customer Segment",
+          "tags": [
+            "glossary:customer_segment"
+          ],
+          "usages": [
+            "customers.segment"
+          ]
+        },
+        {
+          "description": "Fiscal quarter such as FY2026-Q3.",
+          "field": "fiscal_calendar.fiscal_quarter_label",
+          "kind": "dimension",
+          "label": "Fiscal Quarter",
+          "tags": [
+            "glossary:fiscal_quarter"
+          ],
+          "usages": [
+            "created_fiscal.fiscal_quarter_label",
+            "invoice_fiscal.fiscal_quarter_label"
+          ]
+        },
+        {
+          "description": "Fiscal year, named by the calendar year in which it ends.",
+          "field": "fiscal_calendar.fiscal_year",
+          "kind": "dimension",
+          "label": "Fiscal Year",
+          "tags": [
+            "glossary:fiscal_year"
+          ],
+          "usages": [
+            "created_fiscal.fiscal_year",
+            "invoice_fiscal.fiscal_year"
+          ]
+        },
+        {
+          "description": "Invoiced amount (net of discounts) recognized on the invoice date, excluding void invoices.",
+          "field": "invoices.recognized_revenue",
+          "kind": "measure",
+          "label": "Recognized Revenue",
+          "tags": [
+            "certified",
+            "glossary:recognized_revenue"
+          ],
+          "usages": [
+            "invoices.recognized_revenue"
+          ]
+        },
+        {
+          "description": "Distinct customers with at least one order in the period.",
+          "field": "orders.active_customer_count",
+          "kind": "measure",
+          "label": "Active Customers",
+          "tags": [
+            "certified",
+            "glossary:active_customer"
+          ],
+          "usages": [
+            "orders.active_customer_count"
+          ]
+        },
+        {
+          "description": "Gross revenue minus discounts minus refunds, attributed to the order date (late refunds reduce the period of the original order).",
+          "field": "orders.net_revenue",
+          "kind": "measure",
+          "label": "Net Revenue",
+          "tags": [
+            "certified",
+            "glossary:net_revenue"
+          ],
+          "usages": [
+            "orders.net_revenue"
+          ]
+        },
+        {
+          "description": "Number of orders (excluding test accounts and soft-deleted orders).",
+          "field": "orders.order_count",
+          "kind": "measure",
+          "label": "Order Count",
+          "tags": [
+            "certified",
+            "glossary:order_count"
+          ],
+          "usages": [
+            "orders.order_count"
+          ]
+        },
+        {
+          "description": "Sales region of the customer. The legacy value 'Pacific NW' is normalized to 'Pacific Northwest'.",
+          "field": "regions.region_name",
+          "kind": "dimension",
+          "label": "Region",
+          "tags": [
+            "glossary:region"
+          ],
+          "usages": [
+            "regions.region_name"
+          ]
+        }
+      ],
+      "glossary": [
+        {
+          "definition": "A non-test customer with at least one non-deleted order in the period.",
+          "fields": [
+            "orders.active_customer_count"
+          ],
+          "name": "Active Customer",
+          "synonyms": [
+            "active customers",
+            "buying customers"
+          ],
+          "term_id": "active_customer"
+        },
+        {
+          "definition": "A business that buys from Harborline, identified by its legal company name.",
+          "fields": [
+            "customers.company_name"
+          ],
+          "name": "Customer",
+          "synonyms": [
+            "customer name",
+            "account"
+          ],
+          "term_id": "customer"
+        },
+        {
+          "definition": "Enterprise, Mid-Market or SMB, based on annual spend band.",
+          "fields": [
+            "customers.segment"
+          ],
+          "name": "Customer Segment",
+          "synonyms": [
+            "segment"
+          ],
+          "term_id": "customer_segment"
+        },
+        {
+          "definition": "A three-month period of the Harborline fiscal year, which starts February 1. \"Last quarter\" means the last completed fiscal quarter.",
+          "fields": [
+            "created_fiscal.fiscal_quarter_label",
+            "invoice_fiscal.fiscal_quarter_label"
+          ],
+          "name": "Fiscal Quarter",
+          "synonyms": [
+            "quarter",
+            "fiscal qtr"
+          ],
+          "term_id": "fiscal_quarter"
+        },
+        {
+          "definition": "February 1 to January 31, named by the calendar year in which it ends (FY2026 = Feb 2025 to Jan 2026).",
+          "fields": [
+            "created_fiscal.fiscal_year",
+            "invoice_fiscal.fiscal_year"
+          ],
+          "name": "Fiscal Year",
+          "synonyms": [
+            "fy"
+          ],
+          "term_id": "fiscal_year"
+        },
+        {
+          "definition": "Sum of order line amounts before discounts and refunds.",
+          "fields": [
+            "orders.gross_revenue"
+          ],
+          "name": "Gross Revenue",
+          "synonyms": [
+            "gross sales",
+            "bookings"
+          ],
+          "term_id": "gross_revenue"
+        },
+        {
+          "definition": "Gross order revenue minus discounts minus refunds, attributed to the order date. This is the company's default meaning of \"revenue\" and \"sales\".",
+          "fields": [
+            "orders.net_revenue"
+          ],
+          "name": "Net Revenue",
+          "synonyms": [
+            "revenue",
+            "sales",
+            "net sales",
+            "turnover"
+          ],
+          "term_id": "net_revenue"
+        },
+        {
+          "definition": "Number of orders, excluding test accounts and soft-deleted orders.",
+          "fields": [
+            "orders.order_count"
+          ],
+          "name": "Order Count",
+          "synonyms": [
+            "orders",
+            "number of orders",
+            "order volume"
+          ],
+          "term_id": "order_count"
+        },
+        {
+          "definition": "Invoiced amount recognized on the invoice date, excluding void invoices.",
+          "fields": [
+            "invoices.recognized_revenue"
+          ],
+          "name": "Recognized Revenue",
+          "synonyms": [
+            "invoiced revenue",
+            "billed revenue"
+          ],
+          "term_id": "recognized_revenue"
+        },
+        {
+          "definition": "Sales region of the customer. \"Pacific NW\" is a legacy spelling of \"Pacific Northwest\".",
+          "fields": [
+            "regions.region_name"
+          ],
+          "name": "Region",
+          "synonyms": [
+            "sales region",
+            "territory"
+          ],
+          "term_id": "region"
+        }
+      ],
+      "layer_id": "hub:core_hub",
+      "project": "core_hub",
+      "role": "hub",
+      "rules": [
+        {
+          "assertion": "no",
+          "certified": true,
+          "data": {
+            "explore": "invoices_base",
+            "field": "invoices.is_void",
+            "value": "no"
+          },
+          "kind": "default_filter",
+          "provenance": {
+            "file": "explores/invoices.explore.lkml",
+            "glossary_term_id": null,
+            "line": 1,
+            "project": "core_hub"
+          },
+          "rule_id": "default_filter.invoices_base.invoices.is_void",
+          "subjects": [
+            "default_filter:invoices_base:invoices.is_void"
+          ],
+          "test_ids": [
+            "adh.default_filter.invoices_base.invoices.is_void.finance_invoices"
+          ],
+          "text": "In explores built on invoices_base, always filter Is Void (invoices.is_void) = \"no\" unless the user explicitly asks otherwise. Voided invoices never count as revenue."
+        },
+        {
+          "assertion": "c832454bd991b5b7",
+          "certified": true,
+          "data": {
+            "explore": "invoices_base",
+            "sql": "NOT ${customers.is_test_account} AND NOT ${orders.is_deleted}",
+            "sql_markers": [
+              "is_deleted",
+              "is_test_account"
+            ]
+          },
+          "kind": "exclusion",
+          "provenance": {
+            "file": "explores/invoices.explore.lkml",
+            "glossary_term_id": null,
+            "line": 1,
+            "project": "core_hub"
+          },
+          "rule_id": "exclusion.invoices_base",
+          "subjects": [
+            "exclusion:invoices_base"
+          ],
+          "test_ids": [
+            "adh.exclusion.invoices_base.finance_invoices"
+          ],
+          "text": "Explores built on invoices_base (Invoices) always exclude rows: Internal QA account. Always excluded from reporting; Soft-deleted order. Always excluded from reporting. Never include them, even when asked for all data."
+        },
+        {
+          "assertion": "c832454bd991b5b7",
+          "certified": true,
+          "data": {
+            "explore": "orders_base",
+            "sql": "NOT ${customers.is_test_account} AND NOT ${orders.is_deleted}",
+            "sql_markers": [
+              "is_deleted",
+              "is_test_account"
+            ]
+          },
+          "kind": "exclusion",
+          "provenance": {
+            "file": "explores/orders.explore.lkml",
+            "glossary_term_id": null,
+            "line": 1,
+            "project": "core_hub"
+          },
+          "rule_id": "exclusion.orders_base",
+          "subjects": [
+            "exclusion:orders_base"
+          ],
+          "test_ids": [
+            "adh.exclusion.orders_base.finance_orders"
+          ],
+          "text": "Explores built on orders_base (Orders) always exclude rows: Internal QA account. Always excluded from reporting; Soft-deleted order. Always excluded from reporting. Never include them, even when asked for all data."
+        },
+        {
+          "assertion": "ca18cf53ee28a1f3",
+          "certified": true,
+          "data": {
+            "field": "invoices.recognized_revenue",
+            "label": "Recognized Revenue"
+          },
+          "kind": "metric_definition",
+          "provenance": {
+            "file": "views/invoices.view.lkml",
+            "glossary_term_id": "recognized_revenue",
+            "line": 50,
+            "project": "core_hub"
+          },
+          "rule_id": "metric.invoices.recognized_revenue",
+          "subjects": [
+            "metric:invoices.recognized_revenue"
+          ],
+          "test_ids": [
+            "adh.metric.invoices.recognized_revenue"
+          ],
+          "text": "Recognized Revenue (invoices.recognized_revenue) is the certified definition of Recognized Revenue. Invoiced amount (net of discounts) recognized on the invoice date, excluding void invoices."
+        },
+        {
+          "assertion": "796e30d5e78b951f",
+          "certified": true,
+          "data": {
+            "field": "orders.active_customer_count",
+            "label": "Active Customers"
+          },
+          "kind": "metric_definition",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "active_customer",
+            "line": 96,
+            "project": "core_hub"
+          },
+          "rule_id": "metric.orders.active_customer_count",
+          "subjects": [
+            "metric:orders.active_customer_count"
+          ],
+          "test_ids": [
+            "adh.metric.orders.active_customer_count"
+          ],
+          "text": "Active Customers (orders.active_customer_count) is the certified definition of Active Customer. Distinct customers with at least one order in the period."
+        },
+        {
+          "assertion": "92ad4b1f069e108b",
+          "certified": true,
+          "data": {
+            "field": "orders.gross_revenue",
+            "label": "Gross Revenue"
+          },
+          "kind": "metric_definition",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "gross_revenue",
+            "line": 70,
+            "project": "core_hub"
+          },
+          "rule_id": "metric.orders.gross_revenue",
+          "subjects": [
+            "metric:orders.gross_revenue"
+          ],
+          "test_ids": [
+            "adh.metric.orders.gross_revenue"
+          ],
+          "text": "Gross Revenue (orders.gross_revenue) is the certified definition of Gross Revenue. Sum of order line amounts before discounts and refunds."
+        },
+        {
+          "assertion": "27c089fb1636fb40",
+          "certified": true,
+          "data": {
+            "field": "orders.net_revenue",
+            "label": "Net Revenue"
+          },
+          "kind": "metric_definition",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "net_revenue",
+            "line": 87,
+            "project": "core_hub"
+          },
+          "rule_id": "metric.orders.net_revenue",
+          "subjects": [
+            "metric:orders.net_revenue"
+          ],
+          "test_ids": [
+            "adh.metric.orders.net_revenue"
+          ],
+          "text": "Net Revenue (orders.net_revenue) is the certified definition of Net Revenue. Gross revenue minus discounts minus refunds, attributed to the order date (late refunds reduce the period of the original order)."
+        },
+        {
+          "assertion": "6cced08df090f7ae",
+          "certified": true,
+          "data": {
+            "field": "orders.order_count",
+            "label": "Order Count"
+          },
+          "kind": "metric_definition",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "order_count",
+            "line": 62,
+            "project": "core_hub"
+          },
+          "rule_id": "metric.orders.order_count",
+          "subjects": [
+            "metric:orders.order_count"
+          ],
+          "test_ids": [
+            "adh.metric.orders.order_count"
+          ],
+          "text": "Order Count (orders.order_count) is the certified definition of Order Count. Number of orders (excluding test accounts and soft-deleted orders)."
+        },
+        {
+          "assertion": "deny",
+          "certified": true,
+          "data": {
+            "field": "customers.billing_address",
+            "phrases": [
+              "address",
+              "billing address",
+              "street address"
+            ]
+          },
+          "kind": "pii_guardrail",
+          "provenance": {
+            "file": "views/customers.view.lkml",
+            "glossary_term_id": null,
+            "line": 57,
+            "project": "core_hub"
+          },
+          "rule_id": "pii.customers.billing_address",
+          "subjects": [
+            "pii:customers.billing_address"
+          ],
+          "test_ids": [
+            "adh.pii.customers.billing_address"
+          ],
+          "text": "Never return Billing Address (customers.billing_address; personal data: address). If asked for it, refuse or answer without it."
+        },
+        {
+          "assertion": "deny",
+          "certified": true,
+          "data": {
+            "field": "customers.contact_name",
+            "phrases": [
+              "contact name",
+              "contact person"
+            ]
+          },
+          "kind": "pii_guardrail",
+          "provenance": {
+            "file": "views/customers.view.lkml",
+            "glossary_term_id": null,
+            "line": 21,
+            "project": "core_hub"
+          },
+          "rule_id": "pii.customers.contact_name",
+          "subjects": [
+            "pii:customers.contact_name"
+          ],
+          "test_ids": [
+            "adh.pii.customers.contact_name"
+          ],
+          "text": "Never return Contact Name (customers.contact_name; personal data: name). If asked for it, refuse or answer without it."
+        },
+        {
+          "assertion": "deny",
+          "certified": true,
+          "data": {
+            "field": "customers.date_of_birth",
+            "phrases": [
+              "birthday",
+              "contact date of birth",
+              "date of birth",
+              "dob"
+            ]
+          },
+          "kind": "pii_guardrail",
+          "provenance": {
+            "file": "views/customers.view.lkml",
+            "glossary_term_id": null,
+            "line": 48,
+            "project": "core_hub"
+          },
+          "rule_id": "pii.customers.date_of_birth",
+          "subjects": [
+            "pii:customers.date_of_birth"
+          ],
+          "test_ids": [
+            "adh.pii.customers.date_of_birth"
+          ],
+          "text": "Never return Contact Date of Birth (customers.date_of_birth; personal data: dob). If asked for it, refuse or answer without it."
+        },
+        {
+          "assertion": "deny",
+          "certified": true,
+          "data": {
+            "field": "customers.email",
+            "phrases": [
+              "contact email",
+              "e-mail",
+              "email",
+              "email address"
+            ]
+          },
+          "kind": "pii_guardrail",
+          "provenance": {
+            "file": "views/customers.view.lkml",
+            "glossary_term_id": null,
+            "line": 30,
+            "project": "core_hub"
+          },
+          "rule_id": "pii.customers.email",
+          "subjects": [
+            "pii:customers.email"
+          ],
+          "test_ids": [
+            "adh.pii.customers.email"
+          ],
+          "text": "Never return Contact Email (customers.email; personal data: email). If asked for it, refuse or answer without it."
+        },
+        {
+          "assertion": "deny",
+          "certified": true,
+          "data": {
+            "field": "customers.phone",
+            "phrases": [
+              "contact phone",
+              "phone",
+              "phone number",
+              "telephone"
+            ]
+          },
+          "kind": "pii_guardrail",
+          "provenance": {
+            "file": "views/customers.view.lkml",
+            "glossary_term_id": null,
+            "line": 39,
+            "project": "core_hub"
+          },
+          "rule_id": "pii.customers.phone",
+          "subjects": [
+            "pii:customers.phone"
+          ],
+          "test_ids": [
+            "adh.pii.customers.phone"
+          ],
+          "text": "Never return Contact Phone (customers.phone; personal data: phone). If asked for it, refuse or answer without it."
+        },
+        {
+          "assertion": "invoices.invoice",
+          "certified": false,
+          "data": {
+            "explore": "invoices_base",
+            "fiscal_alias": "invoice_fiscal",
+            "time_field": "invoices.invoice"
+          },
+          "kind": "time_convention",
+          "provenance": {
+            "file": "views/invoices.view.lkml",
+            "glossary_term_id": null,
+            "line": 33,
+            "project": "core_hub"
+          },
+          "rule_id": "time.default.invoices_base",
+          "subjects": [
+            "time:default:invoices_base"
+          ],
+          "test_ids": [
+            "adh.time.default.invoices_base.finance_invoices"
+          ],
+          "text": "In explores built on invoices_base, the default time field is invoices.invoice (Invoice): Invoice date, which is the revenue recognition date. Use invoice_fiscal.fiscal_quarter_label / invoice_fiscal.fiscal_year for fiscal periods."
+        },
+        {
+          "assertion": "orders.created",
+          "certified": false,
+          "data": {
+            "explore": "orders_base",
+            "fiscal_alias": "created_fiscal",
+            "time_field": "orders.created"
+          },
+          "kind": "time_convention",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": null,
+            "line": 52,
+            "project": "core_hub"
+          },
+          "rule_id": "time.default.orders_base",
+          "subjects": [
+            "time:default:orders_base"
+          ],
+          "test_ids": [
+            "adh.time.default.orders_base.finance_orders"
+          ],
+          "text": "In explores built on orders_base, the default time field is orders.created (Order Created): When the order was placed (UTC). Use the Order Fiscal Period fields for fiscal reporting. Use created_fiscal.fiscal_quarter_label / created_fiscal.fiscal_year for fiscal periods."
+        },
+        {
+          "assertion": "8c954716c869fb73",
+          "certified": true,
+          "data": {
+            "relative_periods": {
+              "last fiscal quarter": "last_completed_fiscal_quarter",
+              "last fiscal year": "last_completed_fiscal_year",
+              "last month": "last_completed_month",
+              "last quarter": "last_completed_fiscal_quarter",
+              "last year": "last_completed_fiscal_year",
+              "previous quarter": "last_completed_fiscal_quarter"
+            },
+            "view": "fiscal_calendar"
+          },
+          "kind": "time_convention",
+          "provenance": {
+            "file": "views/fiscal_calendar.view.lkml",
+            "glossary_term_id": null,
+            "line": 1,
+            "project": "core_hub"
+          },
+          "rule_id": "time.fiscal.fiscal_calendar",
+          "subjects": [
+            "time:fiscal_calendar"
+          ],
+          "test_ids": [
+            "adh.time.fiscal.fiscal_calendar.quarter",
+            "adh.time.fiscal.fiscal_calendar.year"
+          ],
+          "text": "Harborline fiscal calendar. The fiscal year starts February 1 and is named by the calendar year in which it ends (FY2026 = 2025-02-01 to 2026-01-31). 'Last quarter' means the last completed fiscal quarter. Relative periods always mean completed periods: \"last quarter\" = last_completed_fiscal_quarter, \"last fiscal quarter\" = last_completed_fiscal_quarter, \"previous quarter\" = last_completed_fiscal_quarter, \"last year\" = last_completed_fiscal_year, \"last fiscal year\" = last_completed_fiscal_year, \"last month\" = last_completed_month."
+        },
+        {
+          "assertion": "orders.active_customer_count",
+          "certified": true,
+          "data": {
+            "field": "orders.active_customer_count",
+            "kind": "measure",
+            "name": "active_customer_count",
+            "phrases": [
+              "active customer",
+              "active customers",
+              "buying customers"
+            ],
+            "term_id": "active_customer",
+            "view": "orders"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "active_customer",
+            "line": 96,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.active_customer",
+          "subjects": [
+            "vocab:active customer",
+            "vocab:active customers",
+            "vocab:buying customers"
+          ],
+          "test_ids": [
+            "adh.vocab.active_customer.1",
+            "adh.vocab.active_customer.2"
+          ],
+          "text": "\"active customer\", \"active customers\", \"buying customers\" all mean Active Customer: A non-test customer with at least one non-deleted order in the period. Use orders.active_customer_count."
+        },
+        {
+          "assertion": "customers.company_name",
+          "certified": false,
+          "data": {
+            "field": "customers.company_name",
+            "kind": "dimension",
+            "name": "company_name",
+            "phrases": [
+              "customer",
+              "customer name",
+              "account"
+            ],
+            "term_id": "customer",
+            "view": "customers"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/customers.view.lkml",
+            "glossary_term_id": "customer",
+            "line": 13,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.customer",
+          "subjects": [
+            "vocab:customer",
+            "vocab:customer name",
+            "vocab:account"
+          ],
+          "test_ids": [
+            "adh.vocab.customer.1",
+            "adh.vocab.customer.2"
+          ],
+          "text": "\"customer\", \"customer name\", \"account\" all mean Customer: A business that buys from Harborline, identified by its legal company name. Use customers.company_name."
+        },
+        {
+          "assertion": "customers.segment",
+          "certified": false,
+          "data": {
+            "field": "customers.segment",
+            "kind": "dimension",
+            "name": "segment",
+            "phrases": [
+              "customer segment",
+              "segment"
+            ],
+            "term_id": "customer_segment",
+            "view": "customers"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/customers.view.lkml",
+            "glossary_term_id": "customer_segment",
+            "line": 66,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.customer_segment",
+          "subjects": [
+            "vocab:customer segment",
+            "vocab:segment"
+          ],
+          "test_ids": [
+            "adh.vocab.customer_segment.1"
+          ],
+          "text": "\"customer segment\", \"segment\" all mean Customer Segment: Enterprise, Mid-Market or SMB, based on annual spend band. Use customers.segment."
+        },
+        {
+          "assertion": "fiscal_calendar.fiscal_quarter_label",
+          "certified": false,
+          "data": {
+            "field": "fiscal_calendar.fiscal_quarter_label",
+            "kind": "dimension",
+            "name": "fiscal_quarter_label",
+            "phrases": [
+              "fiscal quarter",
+              "quarter",
+              "fiscal qtr"
+            ],
+            "term_id": "fiscal_quarter",
+            "view": "fiscal_calendar"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/fiscal_calendar.view.lkml",
+            "glossary_term_id": "fiscal_quarter",
+            "line": 23,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.fiscal_quarter",
+          "subjects": [
+            "vocab:fiscal quarter",
+            "vocab:quarter",
+            "vocab:fiscal qtr"
+          ],
+          "test_ids": [
+            "adh.vocab.fiscal_quarter.1",
+            "adh.vocab.fiscal_quarter.2"
+          ],
+          "text": "\"fiscal quarter\", \"quarter\", \"fiscal qtr\" all mean Fiscal Quarter: A three-month period of the Harborline fiscal year, which starts February 1. \"Last quarter\" means the last completed fiscal quarter. Use fiscal_calendar.fiscal_quarter_label."
+        },
+        {
+          "assertion": "fiscal_calendar.fiscal_year",
+          "certified": false,
+          "data": {
+            "field": "fiscal_calendar.fiscal_year",
+            "kind": "dimension",
+            "name": "fiscal_year",
+            "phrases": [
+              "fiscal year",
+              "fy"
+            ],
+            "term_id": "fiscal_year",
+            "view": "fiscal_calendar"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/fiscal_calendar.view.lkml",
+            "glossary_term_id": "fiscal_year",
+            "line": 14,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.fiscal_year",
+          "subjects": [
+            "vocab:fiscal year",
+            "vocab:fy"
+          ],
+          "test_ids": [
+            "adh.vocab.fiscal_year.1"
+          ],
+          "text": "\"fiscal year\", \"fy\" all mean Fiscal Year: February 1 to January 31, named by the calendar year in which it ends (FY2026 = Feb 2025 to Jan 2026). Use fiscal_calendar.fiscal_year."
+        },
+        {
+          "assertion": "orders.gross_revenue",
+          "certified": true,
+          "data": {
+            "field": "orders.gross_revenue",
+            "kind": "measure",
+            "name": "gross_revenue",
+            "phrases": [
+              "gross revenue",
+              "gross sales",
+              "bookings"
+            ],
+            "term_id": "gross_revenue",
+            "view": "orders"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "gross_revenue",
+            "line": 70,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.gross_revenue",
+          "subjects": [
+            "vocab:gross revenue",
+            "vocab:gross sales",
+            "vocab:bookings"
+          ],
+          "test_ids": [
+            "adh.vocab.gross_revenue.1",
+            "adh.vocab.gross_revenue.2"
+          ],
+          "text": "\"gross revenue\", \"gross sales\", \"bookings\" all mean Gross Revenue: Sum of order line amounts before discounts and refunds. Use orders.gross_revenue."
+        },
+        {
+          "assertion": "orders.net_revenue",
+          "certified": true,
+          "data": {
+            "field": "orders.net_revenue",
+            "kind": "measure",
+            "name": "net_revenue",
+            "phrases": [
+              "net revenue",
+              "revenue",
+              "sales",
+              "net sales",
+              "turnover"
+            ],
+            "term_id": "net_revenue",
+            "view": "orders"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "net_revenue",
+            "line": 87,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.net_revenue",
+          "subjects": [
+            "vocab:net revenue",
+            "vocab:revenue",
+            "vocab:sales",
+            "vocab:net sales",
+            "vocab:turnover"
+          ],
+          "test_ids": [
+            "adh.vocab.net_revenue.1",
+            "adh.vocab.net_revenue.2",
+            "adh.vocab.net_revenue.3",
+            "adh.vocab.net_revenue.4"
+          ],
+          "text": "\"net revenue\", \"revenue\", \"sales\", \"net sales\", \"turnover\" all mean Net Revenue: Gross order revenue minus discounts minus refunds, attributed to the order date. This is the company's default meaning of \"revenue\" and \"sales\". Use orders.net_revenue."
+        },
+        {
+          "assertion": "orders.order_count",
+          "certified": true,
+          "data": {
+            "field": "orders.order_count",
+            "kind": "measure",
+            "name": "order_count",
+            "phrases": [
+              "order count",
+              "orders",
+              "number of orders",
+              "order volume"
+            ],
+            "term_id": "order_count",
+            "view": "orders"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/orders.view.lkml",
+            "glossary_term_id": "order_count",
+            "line": 62,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.order_count",
+          "subjects": [
+            "vocab:order count",
+            "vocab:orders",
+            "vocab:number of orders",
+            "vocab:order volume"
+          ],
+          "test_ids": [
+            "adh.vocab.order_count.1",
+            "adh.vocab.order_count.2",
+            "adh.vocab.order_count.3"
+          ],
+          "text": "\"order count\", \"orders\", \"number of orders\", \"order volume\" all mean Order Count: Number of orders, excluding test accounts and soft-deleted orders. Use orders.order_count."
+        },
+        {
+          "assertion": "invoices.recognized_revenue",
+          "certified": true,
+          "data": {
+            "field": "invoices.recognized_revenue",
+            "kind": "measure",
+            "name": "recognized_revenue",
+            "phrases": [
+              "recognized revenue",
+              "invoiced revenue",
+              "billed revenue"
+            ],
+            "term_id": "recognized_revenue",
+            "view": "invoices"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/invoices.view.lkml",
+            "glossary_term_id": "recognized_revenue",
+            "line": 50,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.recognized_revenue",
+          "subjects": [
+            "vocab:recognized revenue",
+            "vocab:invoiced revenue",
+            "vocab:billed revenue"
+          ],
+          "test_ids": [
+            "adh.vocab.recognized_revenue.1",
+            "adh.vocab.recognized_revenue.2"
+          ],
+          "text": "\"recognized revenue\", \"invoiced revenue\", \"billed revenue\" all mean Recognized Revenue: Invoiced amount recognized on the invoice date, excluding void invoices. Use invoices.recognized_revenue."
+        },
+        {
+          "assertion": "regions.region_name",
+          "certified": false,
+          "data": {
+            "field": "regions.region_name",
+            "kind": "dimension",
+            "name": "region_name",
+            "phrases": [
+              "region",
+              "sales region",
+              "territory"
+            ],
+            "term_id": "region",
+            "view": "regions"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/regions.view.lkml",
+            "glossary_term_id": "region",
+            "line": 13,
+            "project": "core_hub"
+          },
+          "rule_id": "vocab.region",
+          "subjects": [
+            "vocab:region",
+            "vocab:sales region",
+            "vocab:territory"
+          ],
+          "test_ids": [
+            "adh.vocab.region.1",
+            "adh.vocab.region.2"
+          ],
+          "text": "\"region\", \"sales region\", \"territory\" all mean Region: Sales region of the customer. \"Pacific NW\" is a legacy spelling of \"Pacific Northwest\". Use regions.region_name."
+        }
+      ]
+    },
+    {
+      "content_hash": "4a5d6c05fe8c54b6593ec9aad5c7e69bd4e8c9bbab48d8c466640f44307059fc",
+      "example_questions": [],
+      "field_guidance": [
+        {
+          "description": "Sum of order line amounts before discounts and refunds. Finance calls this 'bookings'. Never use it when someone asks for 'revenue' without qualification.",
+          "field": "orders.gross_revenue",
+          "kind": "measure",
+          "label": "Gross Revenue",
+          "tags": [
+            "certified",
+            "glossary:gross_revenue"
+          ],
+          "usages": [
+            "orders.gross_revenue"
+          ]
+        },
+        {
+          "description": "Refunds attributed to the order period divided by gross revenue.",
+          "field": "orders.refund_rate",
+          "kind": "measure",
+          "label": "Refund Rate",
+          "tags": [
+            "glossary:refund_rate"
+          ],
+          "usages": [
+            "orders.refund_rate"
+          ]
+        },
+        {
+          "description": "Average number of days from invoice date to payment date for paid invoices.",
+          "field": "payments.days_sales_outstanding",
+          "kind": "measure",
+          "label": "Days Sales Outstanding",
+          "tags": [
+            "glossary:days_sales_outstanding"
+          ],
+          "usages": [
+            "payments.days_sales_outstanding"
+          ]
+        }
+      ],
+      "glossary": [
+        {
+          "definition": "Average days from invoice date to payment date for paid invoices.",
+          "fields": [
+            "payments.days_sales_outstanding"
+          ],
+          "name": "Days Sales Outstanding",
+          "synonyms": [
+            "dso",
+            "days to pay"
+          ],
+          "term_id": "days_sales_outstanding"
+        },
+        {
+          "definition": "Refunds attributed to the order period divided by gross revenue.",
+          "fields": [
+            "orders.refund_rate"
+          ],
+          "name": "Refund Rate",
+          "synonyms": [
+            "refund percentage"
+          ],
+          "term_id": "refund_rate"
+        }
+      ],
+      "layer_id": "spoke:finance_spoke",
+      "project": "finance_spoke",
+      "role": "spoke",
+      "rules": [
+        {
+          "assertion": "5f7568a801bddb64",
+          "certified": false,
+          "data": {
+            "field": "orders.refund_rate",
+            "label": "Refund Rate"
+          },
+          "kind": "metric_definition",
+          "provenance": {
+            "file": "views/finance_refinements.view.lkml",
+            "glossary_term_id": "refund_rate",
+            "line": 10,
+            "project": "finance_spoke"
+          },
+          "rule_id": "metric.orders.refund_rate",
+          "subjects": [
+            "metric:orders.refund_rate"
+          ],
+          "test_ids": [
+            "adh.metric.orders.refund_rate"
+          ],
+          "text": "Refund Rate (orders.refund_rate) is the definition of Refund Rate. Refunds attributed to the order period divided by gross revenue."
+        },
+        {
+          "assertion": "cb35b38861b96cae",
+          "certified": false,
+          "data": {
+            "field": "payments.days_sales_outstanding",
+            "label": "Days Sales Outstanding"
+          },
+          "kind": "metric_definition",
+          "provenance": {
+            "file": "views/finance_refinements.view.lkml",
+            "glossary_term_id": "days_sales_outstanding",
+            "line": 22,
+            "project": "finance_spoke"
+          },
+          "rule_id": "metric.payments.days_sales_outstanding",
+          "subjects": [
+            "metric:payments.days_sales_outstanding"
+          ],
+          "test_ids": [
+            "adh.metric.payments.days_sales_outstanding"
+          ],
+          "text": "Days Sales Outstanding (payments.days_sales_outstanding) is the definition of Days Sales Outstanding. Average number of days from invoice date to payment date for paid invoices."
+        },
+        {
+          "assertion": "payments.days_sales_outstanding",
+          "certified": false,
+          "data": {
+            "field": "payments.days_sales_outstanding",
+            "kind": "measure",
+            "name": "days_sales_outstanding",
+            "phrases": [
+              "days sales outstanding",
+              "dso",
+              "days to pay"
+            ],
+            "term_id": "days_sales_outstanding",
+            "view": "payments"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/finance_refinements.view.lkml",
+            "glossary_term_id": "days_sales_outstanding",
+            "line": 22,
+            "project": "finance_spoke"
+          },
+          "rule_id": "vocab.days_sales_outstanding",
+          "subjects": [
+            "vocab:days sales outstanding",
+            "vocab:dso",
+            "vocab:days to pay"
+          ],
+          "test_ids": [
+            "adh.vocab.days_sales_outstanding.1",
+            "adh.vocab.days_sales_outstanding.2"
+          ],
+          "text": "\"days sales outstanding\", \"dso\", \"days to pay\" all mean Days Sales Outstanding: Average days from invoice date to payment date for paid invoices. Use payments.days_sales_outstanding."
+        },
+        {
+          "assertion": "orders.refund_rate",
+          "certified": false,
+          "data": {
+            "field": "orders.refund_rate",
+            "kind": "measure",
+            "name": "refund_rate",
+            "phrases": [
+              "refund rate",
+              "refund percentage"
+            ],
+            "term_id": "refund_rate",
+            "view": "orders"
+          },
+          "kind": "vocabulary",
+          "provenance": {
+            "file": "views/finance_refinements.view.lkml",
+            "glossary_term_id": "refund_rate",
+            "line": 10,
+            "project": "finance_spoke"
+          },
+          "rule_id": "vocab.refund_rate",
+          "subjects": [
+            "vocab:refund rate",
+            "vocab:refund percentage"
+          ],
+          "test_ids": [
+            "adh.vocab.refund_rate.1"
+          ],
+          "text": "\"refund rate\", \"refund percentage\" all mean Refund Rate: Refunds attributed to the order period divided by gross revenue. Use orders.refund_rate."
+        }
+      ]
+    }
+  ],
+  "lookml_model": "finance",
+  "schema_version": "agent_instructions.v1"
+}
