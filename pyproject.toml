@@ -1,6 +1,6 @@
 [project]
 name = "lookml-agentops"
-version = "0.1.0"
+version = "0.2.0"
 description = "Treat Looker AI-agent instructions and answer correctness as code: lint, compile, verify, attribute, report."
 readme = "README.md"
 license = "Apache-2.0"
@@ -50,6 +50,14 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lookml_agentops"]
+# ship the Harborline example so `pip install lookml-agentops && lkagent demo` works offline
+exclude = ["**/seed/data/**", "**/*.duckdb", "**/*.duckdb.wal", "**/.lkagent/**", "**/reports/**"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"examples/harborline" = "lookml_agentops/examples/harborline"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["**/seed/data/**", "**/*.duckdb", "**/*.duckdb.wal", "**/.lkagent/**", "**/reports/**", "lkagent-demo/**"]
 
 [tool.ruff]
 line-length = 100

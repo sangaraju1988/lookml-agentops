@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased): generalized to any topology
+## 0.2.0: generalized to any topology
 
 - **Breaking:** `lkagent.yaml` version 2. Projects have no roles. New sections: `agents`,
   `catalogs`, `suites`, `owners`, `diagnose`.
@@ -14,6 +14,12 @@
 - `lkagent generate deploy` (staged: write staging, test against it, pass-rate gate). Publishing
   and rollback are manual in the Looker/CA UI; `generate rollback` prints the steps.
 - Example: four projects (including a standalone one), four agent specs, owners for six teams.
+- Ground truth on BigQuery (`diagnose.ground_truth.engine: bigquery`, `[bigquery]` extra) with a
+  bytes-billed cap, query labels, `$param` substitution and a row limit that keeps ground truth
+  aggregated.
+- The Harborline example ships inside the package, so `pip install lookml-agentops && lkagent demo`
+  works offline.
+- Release workflow (GitHub Release and PyPI trusted publishing), community files, Dependabot.
 
 ## 0.1.0
 

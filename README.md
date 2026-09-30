@@ -1,6 +1,16 @@
 # lookml-agentops
 
+[![ci](https://github.com/sangaraju1988/lookml-agentops/actions/workflows/ci.yml/badge.svg)](https://github.com/sangaraju1988/lookml-agentops/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
+
 **Author Looker AI agents as code, and find out why an agent's answer changed.**
+
+> **Status: 0.x, pre-1.0.** Everything below runs offline and is tested end to end. The real
+> Conversational Analytics, Looker API and MCP adapters are tested only against mocked servers so
+> far. Details not yet confirmed in Google's docs are listed in
+> [docs/api-verification.md](docs/api-verification.md). Reports from real instances are very
+> welcome: please open an issue.
 
 `lkagent` has two modes:
 
@@ -25,12 +35,23 @@ Real CA and MCP runners are optional adapters.
 
 ---
 
+## Install
+
+```bash
+pip install lookml-agentops              # core: offline demo, generate, diagnose with the mock agent
+pip install 'lookml-agentops[ca]'        # + Conversational Analytics runner, staged deploy, Looker API
+pip install 'lookml-agentops[bigquery]'  # + ground truth on your BigQuery warehouse
+pip install 'lookml-agentops[mcp]'       # + MCP runner
+```
+
+Until the first PyPI release lands, install from GitHub:
+`pip install "lookml-agentops @ git+https://github.com/sangaraju1988/lookml-agentops"`.
+
 ## The demo: four answer changes, four owners
 
 ```bash
-git clone <this repo> && cd lookml-agentops
-uv sync
-uv run lkagent demo            # or scripts/demo_drift.sh (about 20 seconds, no network)
+lkagent demo                   # bundled example, about 20 seconds, no network
+# from a clone: uv sync && uv run lkagent demo   (or scripts/demo_drift.sh)
 ```
 
 ```

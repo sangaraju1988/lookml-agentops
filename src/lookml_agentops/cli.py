@@ -544,11 +544,15 @@ def demo(
 
 
 def _find_example() -> Path:
+    """The Harborline example: from a source checkout, else the copy bundled in the package."""
     for d in (Path.cwd(), *Path.cwd().parents):
         cand = d / "examples" / "harborline" / "lkagent.yaml"
         if cand.exists():
             return cand.parent
-    typer.echo("could not find examples/harborline; pass --source", err=True)
+    bundled = Path(__file__).resolve().parent / "examples" / "harborline"
+    if (bundled / "lkagent.yaml").exists():
+        return bundled
+    typer.echo("could not find the Harborline example; pass --source", err=True)
     raise typer.Exit(2)
 
 

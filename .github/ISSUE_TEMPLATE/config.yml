@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/sangaraju1988/lookml-agentops/security/advisories/new
+    about: Report security issues privately, not as public issues.
+  - name: Questions and ideas
+    url: https://github.com/sangaraju1988/lookml-agentops/discussions
+    about: Ask how to use lkagent with your Looker setup.
