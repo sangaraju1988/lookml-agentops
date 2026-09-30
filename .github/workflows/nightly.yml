@@ -19,7 +19,7 @@ jobs:
       - run: uv sync --all-extras
 
       - name: Restore run history
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: ${{ env.LKAGENT_CONFIG }}/.lkagent
           key: lkagent-history-${{ github.run_id }}
@@ -63,7 +63,7 @@ jobs:
 
       - name: Save run history
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ${{ env.LKAGENT_CONFIG }}/.lkagent
           key: lkagent-history-${{ github.run_id }}
