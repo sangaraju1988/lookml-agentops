@@ -48,9 +48,34 @@ and `lkagent generate compile`. Tag LookML per [governance-tags.md](governance-t
 
 ## 4. Golden suites and ground truth
 
-Write each suite test's ground truth as **warehouse SQL on raw tables**, independent of LookML,
-using `$as_of` for relative dates. Keep results aggregated. lkagent stores only fingerprints and
-row counts.
+Write each suite test's ground truth as **warehouse SQL on raw tables**, independent of LookML and
+in your warehouse's dialect. Use `$as_of` for the pinned date (rendered as `DATE 'YYYY-MM-DD'`).
+Keep results aggregated. lkagent stores only fingerprints and row counts, and rejects results with
+more than `max_rows` rows.
+
+To run ground truth on BigQuery (`pip install 'lookml-agentops[bigquery]'`):
+
+```yaml
+diagnose:
+  ground_truth:
+    engine: bigquery
+    project_env: GOOGLE_CLOUD_PROJECT     # env var holding the billing project
+    location: US
+    default_dataset: my-project.analytics # unqualified table names resolve here
+    maximum_bytes_billed: 10000000000     # per query; BigQuery fails a job above this
+    max_rows: 10000
+    params: {sales_dataset: my-project.sales}   # $sales_dataset in SQL -> my-project.sales
+```
+
+```bash
+gcloud auth application-default login     # or GOOGLE_APPLICATION_CREDENTIALS
+export GOOGLE_CLOUD_PROJECT=my-project
+lkagent diagnose run --runner ca
+```
+
+With `--runner ca` and BigQuery ground truth, no local data is needed. The mock agent always
+answers from the local DuckDB seed, so combine it with BigQuery ground truth only when both hold
+the same data. Queries are labelled `tool=lkagent, purpose=ground-truth` for cost tracking.
 
 ## 5. Run a real runner
 

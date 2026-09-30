@@ -91,6 +91,22 @@ class DeployConfig(_Strict):
     pass_threshold: float = 1.0  # minimum pass rate against staging before publishing
 
 
+class GroundTruthConfig(_Strict):
+    """Where suite ground-truth SQL runs. Credentials come from the environment only."""
+
+    engine: Literal["duckdb", "bigquery"] = "duckdb"
+    project_env: str = "GOOGLE_CLOUD_PROJECT"  # env var holding the BigQuery billing project
+    location: str | None = None
+    default_dataset: str | None = (
+        None  # e.g. "my-project.analytics": unqualified tables resolve here
+    )
+    maximum_bytes_billed: int | None = (
+        10_000_000_000  # per query; BigQuery fails the job above this
+    )
+    max_rows: int = 10_000  # ground truth must be aggregated; more rows than this is an error
+    params: dict[str, str] = Field(default_factory=dict)  # extra $name substitutions in the SQL
+
+
 class DiagnoseConfig(_Strict):
     runner: Literal["mock", "ca", "mcp"] = "mock"
     scenario: str = "baseline"
@@ -98,6 +114,7 @@ class DiagnoseConfig(_Strict):
     ca: CARunnerConfig = Field(default_factory=CARunnerConfig)
     mcp: MCPRunnerConfig = Field(default_factory=MCPRunnerConfig)
     deploy: DeployConfig = Field(default_factory=DeployConfig)
+    ground_truth: GroundTruthConfig = Field(default_factory=GroundTruthConfig)
 
 
 class LkagentConfig(_Strict):

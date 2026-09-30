@@ -6,6 +6,7 @@ nothing is read from or written to config files.
 
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +29,7 @@ def _bq_type(duck_type: str) -> str:
 
 def load_bigquery(csv_dir: Path, project: str, dataset: str, location: str = "US") -> None:
     try:
-        from google.cloud import bigquery
+        bigquery: Any = importlib.import_module("google.cloud.bigquery")
     except ImportError as exc:  # pragma: no cover - optional extra
         raise RuntimeError(
             "install the [bigquery] extra: pip install lookml-agentops[bigquery]"

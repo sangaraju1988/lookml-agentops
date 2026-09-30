@@ -22,7 +22,12 @@ from lookml_agentops.diagnose.elements import (
     model_elements,
     spec_elements,
 )
-from lookml_agentops.diagnose.ground_truth import GroundTruth
+from lookml_agentops.diagnose.ground_truth import (
+    BigQueryEngine,
+    DuckDBEngine,
+    GroundTruth,
+    GroundTruthEngine,
+)
 from lookml_agentops.diagnose.history import History, RunInfo, RunRecord
 from lookml_agentops.diagnose.loader import LoadedTest, load_suites, wrap_generated
 from lookml_agentops.diagnose.runners.base import AgentContext, Runner
@@ -140,7 +145,11 @@ def collect_inputs(
         kind="data",
         version=sha256_obj(sorted(gt_hashes.items()))[:16],
         owner=owners.owner(DATA_INPUT),
-        meta={"ground_truth_results": len(gt_hashes), "seed_manifest": seed_hash},
+        meta={
+            "ground_truth_results": len(gt_hashes),
+            "engine": cfg.diagnose.ground_truth.engine,
+            "seed_manifest": seed_hash if cfg.diagnose.ground_truth.engine == "duckdb" else None,
+        },
     )
     return inputs
 
@@ -190,7 +199,11 @@ def collect_elements(
 
 
 def run_diagnose(
-    cfg: LkagentConfig, opts: RunOptions, *, log: Callable[[str], None] = lambda _: None
+    cfg: LkagentConfig,
+    opts: RunOptions,
+    *,
+    log: Callable[[str], None] = lambda _: None,
+    gt_engine: GroundTruthEngine | None = None,
 ) -> RunRecord:
     started = dt.datetime.now(dt.UTC).replace(tzinfo=None, microsecond=0)
     agents = compile_agents(cfg)
@@ -207,10 +220,23 @@ def run_diagnose(
         tests = [lt for lt in tests if lt.test.id in opts.tests]
     runner = make_runner(opts.runner, opts.scenario, cfg)
     catalog = load_catalog(cfg)
-    if opts.runner == "mock" or any(lt.sql_path for lt in tests):
+    gt_conf = cfg.diagnose.ground_truth
+    has_truth = any(lt.sql_path for lt in tests)
+    need_duckdb = opts.runner == "mock" or (has_truth and gt_conf.engine == "duckdb")
+    if need_duckdb:
         ensure_seed(cfg, log)
     db = cfg.path(cfg.seed.duckdb)
-    con = duckdb.connect(str(db), read_only=True) if db.exists() else None
+    con = duckdb.connect(str(db), read_only=True) if need_duckdb and db.exists() else None
+    if gt_engine is None and has_truth:
+        if gt_conf.engine == "bigquery":
+            gt_engine = BigQueryEngine.from_config(gt_conf)
+            if opts.runner == "mock":
+                log(
+                    "note: the mock agent answers from the local DuckDB seed while ground truth runs on "
+                    "BigQuery; results only agree if both hold the same data"
+                )
+        elif con is not None:
+            gt_engine = DuckDBEngine(con)
     history = History(cfg.path(cfg.diagnose.history)) if opts.record else None
     if history is not None and history.migration_note:
         log(history.migration_note)
@@ -219,7 +245,11 @@ def run_diagnose(
     gt_hashes: dict[str, str] = {}
     runner_element = f"runner:{runner.meta.runner}"
     try:
-        truth = GroundTruth(con, cfg.as_of) if con is not None else None
+        truth = (
+            GroundTruth(gt_engine, cfg.as_of, max_rows=gt_conf.max_rows, params=gt_conf.params)
+            if gt_engine is not None
+            else None
+        )
         for lt in tests:
             ca = agents[lt.test.agent]
             ctx = AgentContext(lt.test.agent, ca.spec, ca.binding, cfg.as_of, con)
@@ -273,6 +303,8 @@ def run_diagnose(
         return rec
     finally:
         runner.close()
+        if gt_engine is not None:
+            gt_engine.close()
         if con is not None:
             con.close()
         if history is not None:
