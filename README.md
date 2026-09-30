@@ -44,8 +44,8 @@ pip install 'lookml-agentops[bigquery]'  # + ground truth on your BigQuery wareh
 pip install 'lookml-agentops[mcp]'       # + MCP runner
 ```
 
-Until the first PyPI release lands, install from GitHub:
-`pip install "lookml-agentops @ git+https://github.com/sangaraju1988/lookml-agentops"`.
+[![PyPI](https://img.shields.io/pypi/v/lookml-agentops.svg)](https://pypi.org/project/lookml-agentops/)
+To try unreleased changes: `pip install "lookml-agentops @ git+https://github.com/sangaraju1988/lookml-agentops"`.
 
 ## The demo: four answer changes, four owners
 
