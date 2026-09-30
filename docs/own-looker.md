@@ -1,5 +1,15 @@
 # Running against your own Looker
 
+## 0. Scaffold
+
+```bash
+lkagent init path/to/agentops --scan path/to/your/lookml   # or --project name=path (repeatable)
+```
+
+This writes everything below as a starting point: config, owners with `TODO` teams, an empty
+glossary, one starter spec and suite per project with explores. It then lints and compiles it.
+Edit the results rather than starting from scratch.
+
 ## 1. Declare your inputs
 
 ```yaml

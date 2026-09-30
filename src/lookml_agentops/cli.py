@@ -52,6 +52,87 @@ def version() -> None:
 
 
 @app.command()
+def init(
+    target: Annotated[
+        Path, typer.Argument(help="Directory to write lkagent.yaml and friends into")
+    ] = Path("."),
+    project: Annotated[
+        list[str] | None, typer.Option(help="LookML project as NAME=PATH (repeatable)")
+    ] = None,
+    scan: Annotated[
+        Path | None, typer.Option(help="Find LookML projects under this directory")
+    ] = None,
+    as_of: Annotated[
+        str | None, typer.Option(help="Pinned date for relative periods (default: today)")
+    ] = None,
+    warehouse: Annotated[
+        str, typer.Option(help="Ground-truth engine: duckdb | bigquery")
+    ] = "bigquery",
+    force: Annotated[bool, typer.Option("--force", help="Overwrite existing files")] = False,
+) -> None:
+    """Scaffold lkagent.yaml, owners.yaml, starter agent specs and suites from existing LookML."""
+    import datetime as dt
+
+    from lookml_agentops.config import load_config
+    from lookml_agentops.generate.compile import CompileError, compile_agents
+    from lookml_agentops.lint.engine import run_lint
+    from lookml_agentops.lookml.resolve import ResolveError
+    from lookml_agentops.scaffold import ScaffoldError, discover_projects, scaffold
+
+    projects: dict[str, Path] = {}
+    for item in project or []:
+        name, sep, path = item.partition("=")
+        if not sep or not name or not path:
+            typer.echo(f"--project must look like NAME=PATH, got {item!r}", err=True)
+            raise typer.Exit(2)
+        projects[name] = Path(path)
+    try:
+        if scan is not None:
+            projects = {**discover_projects(scan), **projects}
+        day = dt.date.fromisoformat(as_of) if as_of else dt.date.today()
+        if warehouse not in ("duckdb", "bigquery"):
+            raise ScaffoldError("--warehouse must be duckdb or bigquery")
+        res = scaffold(target, projects, as_of=day, warehouse=warehouse, force=force)
+    except (ScaffoldError, ResolveError, ValueError) as exc:
+        typer.echo(f"init: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    typer.echo(f"projects: {', '.join(f'{n} ({p})' for n, p in res.projects.items())}")
+    for agent, explores in res.agents.items():
+        typer.echo(f"agent {agent}: {', '.join(explores)}")
+    if res.libraries:
+        typer.echo(f"libraries (no model file, tracked but no agent): {', '.join(res.libraries)}")
+    for note in res.notes:
+        typer.echo(f"note: {note}")
+    for written in res.written:
+        typer.echo(f"wrote {written}")
+
+    cfg = load_config(res.root)
+    lint = run_lint(cfg)
+    by_rule: dict[str, int] = {}
+    for f in lint.findings:
+        by_rule[f.rule_id] = by_rule.get(f.rule_id, 0) + 1
+    typer.echo(
+        f"\nlint: {lint.errors} error(s), {lint.warnings} warning(s)"
+        + (f" — {', '.join(f'{k} x{v}' for k, v in sorted(by_rule.items()))}" if by_rule else "")
+    )
+    try:
+        compiled = compile_agents(cfg)
+        typer.echo(f"compile: {len(compiled)} agent(s) compile cleanly")
+    except CompileError as exc:
+        typer.echo(
+            f"compile: {len(exc.findings)} spec error(s); run `lkagent generate lint` for details"
+        )
+    typer.echo(
+        "\nnext steps:\n"
+        "  1. rename the TODO teams in owners.yaml and fill in Role/Audience in agents/*.agent.md\n"
+        "  2. lkagent generate lint            # fix LookML findings (descriptions, PII tags, ...)\n"
+        "  3. lkagent generate compile         # build/<agent>/ca_context.json, looker_ui.md, tests\n"
+        "  4. add real questions + ground_truth_sql to suites/, set diagnose.ca.agents, then\n"
+        "     lkagent diagnose run             # needs CA credentials; see docs/own-looker.md"
+    )
+
+
+@app.command()
 def seed(
     config: ConfigOpt = None,
     scale: Annotated[float | None, typer.Option(help="Override seed.scale")] = None,

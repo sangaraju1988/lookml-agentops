@@ -106,6 +106,22 @@ uv run lkagent diagnose report                   # reports/report.md + reports/r
 uv run lkagent diagnose run --explain-deps fin-003   # everything one test depends on, with file:line
 ```
 
+## Start from your own LookML
+
+```bash
+pip install 'lookml-agentops[ca,bigquery]'
+mkdir agentops && cd agentops
+lkagent init . --scan ~/code/looker     # finds every LookML project (any import layout)
+lkagent generate lint                   # what to fix in LookML before agents can rely on it
+lkagent generate compile                # build/<agent>/ca_context.json, looker_ui.md, tests
+```
+
+`init` writes a starter spec per project with explores (up to 5), a guardrail for exposed
+PII-tagged fields, a golden query built from a real measure, and a starter suite. It also writes
+`owners.yaml` with `TODO` team names to replace. Projects without a model file (libraries that
+others import) are tracked but get no agent. Nothing is overwritten without `--force`. Next:
+[docs/own-looker.md](docs/own-looker.md).
+
 ## An agent spec
 
 ```markdown
@@ -146,6 +162,7 @@ contradicted by a spec that extends it. Full reference: [docs/agent-spec.md](doc
 
 | Command | What it does |
 |---|---|
+| `lkagent init [DIR] --scan PATH` | Scaffold a setup from your existing LookML: `lkagent.yaml`, `owners.yaml`, a glossary, a starter spec and suite per project, then lint and compile it |
 | `lkagent seed [--delta late-refunds]` | Deterministic Harborline data with documented [traps](examples/harborline/seed/TRAPS.md) |
 | `lkagent graph` | Import DAG (any topology; cycles are errors) and effective models with per-field provenance |
 | `lkagent generate new` | Draft a `*.agent.md` from plain English, grounded in the model. The provider is pluggable, and the offline `stub` provider is the default. The draft is linted immediately. |
