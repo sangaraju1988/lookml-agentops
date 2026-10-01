@@ -15,7 +15,7 @@ jobs:
     env:
       UV_PYTHON: ${{ matrix.python }}   # keep every step on the matrix Python (not .python-version)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
       - run: uv sync --all-extras
       - run: uv run --no-sync python --version
