@@ -1,6 +1,6 @@
 [project]
 name = "lookml-agentops"
-version = "0.2.0"
+version = "0.3.0"
 description = "Treat Looker AI-agent instructions and answer correctness as code: lint, compile, verify, attribute, report."
 readme = "README.md"
 license = "Apache-2.0"

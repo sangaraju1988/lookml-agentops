@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 - `lkagent init`: scaffold `lkagent.yaml`, `owners.yaml`, a glossary, and starter agent specs and
   suites from existing LookML projects (`--scan DIR` or `--project NAME=PATH`), then lint and
