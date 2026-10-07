@@ -73,7 +73,7 @@ jobs:
           gh pr comment "$PR" --body-file reports/report.md --edit-last \
             || gh pr comment "$PR" --body-file reports/report.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: lkagent-report

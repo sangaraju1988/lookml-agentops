@@ -25,7 +25,7 @@ jobs:
           uv venv /tmp/smoke --python 3.12
           uv pip install --python /tmp/smoke/bin/python dist/*.whl
           cd /tmp && /tmp/smoke/bin/lkagent demo --workdir /tmp/lkagent-demo
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: dist
           path: dist/
