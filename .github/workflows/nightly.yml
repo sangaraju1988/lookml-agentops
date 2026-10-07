@@ -68,7 +68,7 @@ jobs:
           path: ${{ env.LKAGENT_CONFIG }}/.lkagent
           key: lkagent-history-${{ github.run_id }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: lkagent-nightly-report
